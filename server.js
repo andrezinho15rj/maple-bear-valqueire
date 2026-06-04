@@ -235,6 +235,55 @@ function mapTurma(t) {
 }
 
 // ══════════════════════════════════════════════════════════════════
+// CACHE — evita refazer a chamada gigante de parcelas a cada request
+// ══════════════════════════════════════════════════════════════════
+const cache = {};
+function getCache(key, ttlMs) {
+  const c = cache[key];
+  if (c && Date.now() - c.at < ttlMs) return c.data;
+  return null;
+}
+function setCache(key, data) {
+  cache[key] = { data, at: Date.now() };
+}
+
+const parseVal = v => Number((v || '0').toString().replace(/\./g, '').replace(',', '.'));
+
+// Datas BR DD/MM/YYYY → Date
+function brToDate(s) {
+  if (!s) return null;
+  const [d, m, y] = s.split('/');
+  if (!y) return null;
+  return new Date(Number(y), Number(m) - 1, Number(d));
+}
+
+// Busca TODAS as parcelas da conta principal da escola (ContaID=3)
+// com cache de 5 minutos. Retorna array já mapeado.
+const CONTA_ESCOLA = process.env.SPONTE_CONTA_ID || '3';
+async function getAllParcelas() {
+  const cached = getCache('parcelas', 5 * 60 * 1000);
+  if (cached) return cached;
+
+  const result = await sponteCall('GetParcelas', `ContaID=${CONTA_ESCOLA}`);
+  if (!result.ok) return [];
+
+  const lista = extractArray(result.raw, 'ArrayOfWsParcela', 'wsParcela')
+    .filter(isSuccess)
+    .map(mapParcela);
+
+  setCache('parcelas', lista);
+  return lista;
+}
+
+// Calcula situação real considerando vencimento (Pendente + vencida = vencido)
+function situacaoReal(p) {
+  if (p.status === 'pago' || p.status === 'cancelado') return p.status;
+  const venc = brToDate(p.vencimento);
+  if (venc && venc < new Date()) return 'vencido';
+  return 'pendente';
+}
+
+// ══════════════════════════════════════════════════════════════════
 // AUTH SECRETARIA
 // ══════════════════════════════════════════════════════════════════
 app.post('/api/login/admin', async (req, res) => {
@@ -248,75 +297,137 @@ app.post('/api/login/admin', async (req, res) => {
 // DASHBOARD
 // ══════════════════════════════════════════════════════════════════
 app.get('/api/dashboard', async (req, res) => {
-  const [turmasResult, parcResult] = await Promise.all([
+  const [turmasResult, parcelas] = await Promise.all([
     sponteCall('GetTurmas', 'AnoLetivo=2026'),
-    sponteCall('GetParcelas', 'AnoLetivo=2026'),
+    getAllParcelas(),
   ]);
 
   const turmas = turmasResult.ok
     ? extractArray(turmasResult.raw, 'ArrayOfWsTurma', 'wsTurma').filter(isSuccess)
     : [];
-  const parcelas = parcResult.ok
-    ? extractArray(parcResult.raw, 'ArrayOfWsParcela', 'wsParcela').filter(isSuccess)
-    : [];
 
   const totalAlunos = turmas.reduce((s, t) => s + Number(t.VagasOcupadas || 0), 0);
-  const vencidas = parcelas.filter(p => p.SituacaoParcela === 'Vencida');
+
+  // Mês/ano corrente
+  const hoje = new Date();
+  const mesAtual = hoje.getMonth();
+  const anoAtual = hoje.getFullYear();
+
+  let receberMes = 0, recebidoMes = 0, vencidoTotal = 0;
+  let qtdVencidas = 0, qtdPendentes = 0;
+  const alunosInadimplentes = new Set();
+
+  for (const p of parcelas) {
+    const sit = situacaoReal(p);
+    const venc = brToDate(p.vencimento);
+
+    if (sit === 'vencido') {
+      vencidoTotal += parseVal(p.valor);
+      qtdVencidas++;
+      if (p.alunoId) alunosInadimplentes.add(p.alunoId);
+    }
+    if (sit === 'pendente') qtdPendentes++;
+
+    // recebido no mês corrente
+    const pag = brToDate(p.pagamento);
+    if (p.status === 'pago' && pag && pag.getMonth() === mesAtual && pag.getFullYear() === anoAtual) {
+      recebidoMes += parseVal(p.valorPago || p.valor);
+    }
+    // a receber no mês corrente
+    if (sit !== 'pago' && sit !== 'cancelado' && venc && venc.getMonth() === mesAtual && venc.getFullYear() === anoAtual) {
+      receberMes += parseVal(p.valor);
+    }
+  }
+
+  const eventosHoje = 0;
 
   res.json({
     totalAlunos,
     alunosAtivos: totalAlunos,
-    novasMatriculas: turmas.length,
-    cobrancasVencidas: vencidas.length,
-    receitaMes: 0,
-    inadimplencia: totalAlunos ? Math.round((vencidas.length / totalAlunos) * 100) : 0,
-    eventosHoje: 0,
     turmas: turmas.length,
+    novasMatriculas: turmas.length,
+    cobrancasVencidas: qtdVencidas,
+    cobrancasPendentes: qtdPendentes,
+    receitaMes: recebidoMes,
+    aReceberMes: receberMes,
+    totalVencido: vencidoTotal,
+    alunosInadimplentes: alunosInadimplentes.size,
+    inadimplencia: totalAlunos ? Math.round((alunosInadimplentes.size / totalAlunos) * 100) : 0,
+    eventosHoje,
     _fonte: 'sponte',
   });
 });
 
 // ══════════════════════════════════════════════════════════════════
-// ALUNOS
+// ALUNOS — busca por nome/CPF ou lista por turma
 // ══════════════════════════════════════════════════════════════════
 app.get('/api/alunos', async (req, res) => {
-  const { busca, turmaId, page = 1 } = req.query;
+  const { busca, turmaId, alunoId } = req.query;
 
-  let params = '';
-  if (busca) params = `Nome=${busca}`;
-  else if (turmaId) params = `TurmaID=${turmaId}`;
+  // Busca por nome ou CPF
+  if (busca && busca.length >= 3) {
+    const result = await sponteCall('GetAlunos', `Nome=${busca}`);
+    if (!result.ok) return res.json([]);
+    const lista = extractArray(result.raw, 'ArrayOfWsAluno', 'wsAluno').filter(isSuccess);
+    return res.json(lista.map(mapAluno));
+  }
 
-  // Se busca vazia, listar por turmas do ano
-  if (!params) {
-    const turmasRes = await sponteCall('GetTurmas', 'AnoLetivo=2026');
-    if (!turmasRes.ok) return res.json([]);
-    const turmas = extractArray(turmasRes.raw, 'ArrayOfWsTurma', 'wsTurma').filter(isSuccess);
+  // Busca por AlunoID específico
+  if (alunoId) {
+    const result = await sponteCall('GetAlunos', `AlunoID=${alunoId}`);
+    if (!result.ok) return res.json([]);
+    const lista = extractArray(result.raw, 'ArrayOfWsAluno', 'wsAluno').filter(isSuccess);
+    return res.json(lista.map(mapAluno));
+  }
 
-    // Pegar integrantes da primeira turma para começar
-    const turmaAlvos = turmas.slice((Number(page) - 1) * 3, Number(page) * 3);
-    const resultados = [];
-    for (const t of turmaAlvos) {
-      const integRes = await sponteCall('GetIntegrantesTurmas', `TurmaID=${t.TurmaID}`);
-      if (!integRes.ok) continue;
-      const integ = extractArray(integRes.raw, 'ArrayOfIntegrantes', 'Integrantes');
-      // Buscar dados de cada aluno
-      for (const item of integ) {
-        if (item.AlunoID && Number(item.AlunoID) > 0) {
-          const alunoRes = await sponteCall('GetAlunos', `AlunoID=${item.AlunoID}`);
-          if (alunoRes.ok) {
-            const lista = extractArray(alunoRes.raw, 'ArrayOfWsAluno', 'wsAluno').filter(isSuccess);
-            resultados.push(...lista.map(mapAluno));
-          }
+  // Lista por turma (GetIntegrantesTurmas)
+  const tid = turmaId || '131'; // turma padrão inicial
+  const result = await sponteCall('GetIntegrantesTurmas', `TurmaID=${tid}`);
+  if (!result.ok) return res.json([]);
+
+  // Estrutura: ArrayOfWsIntegrantesTurma → wsIntegrantesTurma → Integrantes → Integrantes[]
+  try {
+    const root = result.raw?.ArrayOfWsIntegrantesTurma?.wsIntegrantesTurma;
+    if (!root) return res.json([]);
+    const turmaItems = Array.isArray(root) ? root : [root];
+    const alunos = [];
+    for (const turma of turmaItems) {
+      const integ = turma?.Integrantes?.Integrantes;
+      if (!integ) continue;
+      const lista = Array.isArray(integ) ? integ : [integ];
+      for (const a of lista) {
+        if (a.AlunoID && Number(a.AlunoID) > 0) {
+          alunos.push({
+            id: a.AlunoID,
+            nome: (a.Nome || '').trim(),
+            turma: turma.Nome,
+            ra: a.NumeroContrato,
+            status: 'Ativo',
+            sStatus: 'ativo',
+            _turmaId: tid,
+          });
         }
       }
     }
-    return res.json(resultados);
+    return res.json(alunos);
+  } catch {
+    return res.json([]);
   }
+});
 
-  const result = await sponteCall('GetAlunos', params);
-  if (!result.ok) return res.status(500).json({ error: result.error });
-  const lista = extractArray(result.raw, 'ArrayOfWsAluno', 'wsAluno').filter(isSuccess);
-  res.json(lista.map(mapAluno));
+// Todas as turmas com seus alunos (para o seletor de turmas)
+app.get('/api/alunos/por-turma', async (req, res) => {
+  const turmasRes = await sponteCall('GetTurmas', 'AnoLetivo=2026');
+  if (!turmasRes.ok) return res.json([]);
+  const turmas = extractArray(turmasRes.raw, 'ArrayOfWsTurma', 'wsTurma').filter(isSuccess);
+  res.json(turmas.map(t => ({
+    id: t.TurmaID,
+    nome: t.Nome,
+    curso: t.Curso,
+    turno: t.Turno,
+    qtdAlunos: Number(t.VagasOcupadas || 0),
+    anoLetivo: t.AnoLetivo,
+  })));
 });
 
 // Detalhes de um aluno
@@ -342,6 +453,9 @@ app.get('/api/financeiro/:alunoId', async (req, res) => {
     .filter(isSuccess)
     .map(mapParcela);
 
+  // recalcula situação considerando vencimento
+  parcelas = parcelas.map(p => ({ ...p, status: situacaoReal(p) }));
+
   if (status) {
     parcelas = parcelas.filter(p => p.status === status);
   }
@@ -349,8 +463,6 @@ app.get('/api/financeiro/:alunoId', async (req, res) => {
   const pago = parcelas.filter(p => p.status === 'pago');
   const pendente = parcelas.filter(p => p.status === 'pendente');
   const vencido = parcelas.filter(p => p.status === 'vencido');
-
-  const parseVal = v => Number((v || '0').toString().replace(/\./g, '').replace(',', '.'));
 
   res.json({
     titulos: parcelas,
@@ -362,23 +474,101 @@ app.get('/api/financeiro/:alunoId', async (req, res) => {
   });
 });
 
-// Financeiro geral da secretaria
+// ══════════════════════════════════════════════════════════════════
+// FINANCEIRO GERAL DA SECRETARIA — todas as contas, resumo, filtros
+// ══════════════════════════════════════════════════════════════════
 app.get('/api/financeiro', async (req, res) => {
-  const { status, turmaId } = req.query;
+  const { status, busca, categoria, page = 1, pageSize = 50 } = req.query;
 
-  let params = '';
-  if (turmaId) params = `TurmaID=${turmaId}`;
-  else params = 'AnoLetivo=2026';
+  let parcelas = await getAllParcelas();
+  // recalcula situação real (pendente vencida → vencido)
+  parcelas = parcelas.map(p => ({ ...p, status: situacaoReal(p) }));
 
-  const result = await sponteCall('GetParcelas', params);
-  if (!result.ok) return res.status(500).json({ error: result.error });
+  // ── RESUMO GERAL (sobre tudo, antes de filtrar) ──
+  const ativas = parcelas.filter(p => p.status !== 'cancelado');
+  const pago = ativas.filter(p => p.status === 'pago');
+  const pendente = ativas.filter(p => p.status === 'pendente');
+  const vencido = ativas.filter(p => p.status === 'vencido');
 
-  let parcelas = extractArray(result.raw, 'ArrayOfWsParcela', 'wsParcela')
-    .filter(isSuccess)
-    .map(mapParcela);
+  const resumo = {
+    totalParcelas: ativas.length,
+    totalRecebido: pago.reduce((s, p) => s + parseVal(p.valorPago || p.valor), 0),
+    totalAReceber: pendente.reduce((s, p) => s + parseVal(p.valor), 0),
+    totalVencido: vencido.reduce((s, p) => s + parseVal(p.valor), 0),
+    qtdPagas: pago.length,
+    qtdPendentes: pendente.length,
+    qtdVencidas: vencido.length,
+    alunosInadimplentes: new Set(vencido.map(p => p.alunoId).filter(Boolean)).size,
+  };
 
-  if (status) parcelas = parcelas.filter(p => p.status === status);
-  res.json(parcelas);
+  // ── FILTROS ──
+  let filtradas = ativas;
+  if (status && status !== 'todas') filtradas = filtradas.filter(p => p.status === status);
+  if (categoria) filtradas = filtradas.filter(p => (p.categoria || '').toLowerCase().includes(categoria.toLowerCase()));
+  if (busca) {
+    const b = busca.toLowerCase();
+    filtradas = filtradas.filter(p =>
+      (p.sacado || '').toLowerCase().includes(b) ||
+      (p.categoria || '').toLowerCase().includes(b) ||
+      String(p.alunoId).includes(b)
+    );
+  }
+
+  // ordenar por vencimento (mais recente/urgente primeiro: vencidas no topo)
+  const ordem = { vencido: 0, pendente: 1, pago: 2 };
+  filtradas.sort((a, b) => {
+    if (ordem[a.status] !== ordem[b.status]) return ordem[a.status] - ordem[b.status];
+    const va = brToDate(a.vencimento), vb = brToDate(b.vencimento);
+    return (vb?.getTime() || 0) - (va?.getTime() || 0);
+  });
+
+  // ── PAGINAÇÃO ──
+  const total = filtradas.length;
+  const start = (Number(page) - 1) * Number(pageSize);
+  const pagina = filtradas.slice(start, start + Number(pageSize));
+
+  res.json({
+    titulos: pagina,
+    resumo,
+    paginacao: { page: Number(page), pageSize: Number(pageSize), total, totalPaginas: Math.ceil(total / Number(pageSize)) },
+  });
+});
+
+// Lista de categorias financeiras (para filtros)
+app.get('/api/financeiro-categorias', async (req, res) => {
+  const parcelas = await getAllParcelas();
+  const cats = {};
+  for (const p of parcelas.map(x => ({ ...x, status: situacaoReal(x) }))) {
+    if (p.status === 'cancelado') continue;
+    const c = p.categoria || 'Outros';
+    if (!cats[c]) cats[c] = { categoria: c, qtd: 0, vencido: 0, pendente: 0 };
+    cats[c].qtd++;
+    if (p.status === 'vencido') cats[c].vencido += parseVal(p.valor);
+    if (p.status === 'pendente') cats[c].pendente += parseVal(p.valor);
+  }
+  res.json(Object.values(cats).sort((a, b) => b.qtd - a.qtd));
+});
+
+// Inadimplentes — agrupado por aluno
+app.get('/api/inadimplentes', async (req, res) => {
+  let parcelas = await getAllParcelas();
+  parcelas = parcelas.map(p => ({ ...p, status: situacaoReal(p) }))
+    .filter(p => p.status === 'vencido');
+
+  const porAluno = {};
+  for (const p of parcelas) {
+    const id = p.alunoId || 'sem-id';
+    if (!porAluno[id]) porAluno[id] = { alunoId: id, sacado: p.sacado, qtd: 0, total: 0, parcelas: [] };
+    porAluno[id].qtd++;
+    porAluno[id].total += parseVal(p.valor);
+    porAluno[id].parcelas.push(p);
+  }
+  const lista = Object.values(porAluno).sort((a, b) => b.total - a.total);
+  res.json({
+    inadimplentes: lista,
+    totalGeral: lista.reduce((s, a) => s + a.total, 0),
+    qtdAlunos: lista.length,
+  });
 });
 
 // ══════════════════════════════════════════════════════════════════

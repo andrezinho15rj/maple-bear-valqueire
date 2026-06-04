@@ -639,8 +639,8 @@ function statusBadge(s='', dias=0) {
   if(s==='pago'||s==='Pago') return '<span class="badge green">PAGO</span>';
   if(s==='vencido'||s==='Vencido') return `<span class="badge red">${dias?dias+'d vencido':'VENCIDO'}</span>`;
   if(s==='cancelada'||s==='cancelado') return '<span class="badge gray">CANCELADO</span>';
-  if(s==='inativo') return '<span class="badge gray">INATIVO</span>';
-  if(s==='ativa') return '<span class="badge green">ATIVA</span>';
+  if(s==='inativo'||s==='Inativo') return '<span class="badge gray">INATIVO</span>';
+  if(s==='ativa'||s==='ativo'||s==='Ativo'||s==='Ativa') return '<span class="badge green">ATIVO</span>';
   return '<span class="badge orange">PENDENTE</span>';
 }
 function setContent(html) { document.getElementById('content').innerHTML=html; }
@@ -834,15 +834,20 @@ function financeiroFallback(titulos, resumo) {
 }
 
 function showFatura(t) {
-  const val = t.valor||t.nValor||t.nValorTitulo||0;
-  openPanel('Fatura – '+fmtDate(t.vencimento||t.dVencimento||t.dDataVencimento), `
+  const val = parseValBR(t.valor||t.nValorTitulo||0);
+  openPanel('Fatura – '+(t.sacado||''), `
     <div style="text-align:center;padding:20px 0">
       <div style="font-size:32px;font-weight:800;color:var(--primary)">${fmtR(val)}</div>
       <div style="margin-top:8px">${statusBadge(t.status||t.sStatus)}</div>
     </div>
-    <div class="info-row"><span class="info-label">Descrição</span><span class="info-value">${t.descricao||t.sDescricao||t.sHistorico||'—'}</span></div>
-    <div class="info-row"><span class="info-label">Vencimento</span><span class="info-value">${fmtDate(t.vencimento||t.dVencimento||t.dDataVencimento)}</span></div>
-    ${t.pagamento||t.dPagamento?`<div class="info-row"><span class="info-label">Pagamento</span><span class="info-value">${fmtDate(t.pagamento||t.dPagamento)}</span></div>`:''}
+    ${t.sacado?`<div class="info-row"><span class="info-label">Aluno/Sacado</span><span class="info-value">${t.sacado}</span></div>`:''}
+    <div class="info-row"><span class="info-label">Categoria</span><span class="info-value">${t.categoria||t.descricao||'—'}</span></div>
+    <div class="info-row"><span class="info-label">Parcela</span><span class="info-value">${t.numeroParcela||'—'}</span></div>
+    <div class="info-row"><span class="info-label">Vencimento</span><span class="info-value">${t.vencimento||'—'}</span></div>
+    ${t.pagamento?`<div class="info-row"><span class="info-label">Pagamento</span><span class="info-value">${t.pagamento}</span></div>`:''}
+    ${t.valorPago?`<div class="info-row"><span class="info-label">Valor Pago</span><span class="info-value">${fmtR(parseValBR(t.valorPago))}</span></div>`:''}
+    ${t.formaPagamento?`<div class="info-row"><span class="info-label">Forma</span><span class="info-value">${t.formaPagamento}</span></div>`:''}
+    ${t.bolsa?`<div class="info-row"><span class="info-label">Bolsa</span><span class="info-value">${t.bolsa}</span></div>`:''}
     ${t.nossoNumero||t.sNossoNumero?`<div class="info-row"><span class="info-label">Nosso Número</span><span class="info-value">${t.nossoNumero||t.sNossoNumero}</span></div>`:''}
     ${t.linhaDigitavel||t.sLinhaDigitavel?`
     <div style="margin-top:16px;padding:12px;background:var(--bg);border-radius:10px">
@@ -931,39 +936,65 @@ async function renderDashboard() {
   const res = await api('/api/dashboard');
   const d = res.ok && !res.data._fallback ? res.data : null;
 
-  const hoje = new Date(2026,0,1); // 1 Jan 2026
+  const hoje = new Date();
   const nomeHoje = hoje.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  const hora = new Date().getHours();
+  const hora = hoje.getHours();
   const saud = hora<12?'Bom dia':hora<18?'Boa tarde':'Boa noite';
 
   setContent(`
     <div class="greeting-banner">
       <div><h2>${saud}, ${(S.usuario?.nome||'Secretaria').split(' ')[0]}!</h2>
-      <p>${nomeHoje}</p></div>
+      <p style="text-transform:capitalize">${nomeHoje}</p></div>
       <span class="material-icons-round" style="font-size:48px;opacity:.35">wb_sunny</span>
     </div>
     <div class="kpi-grid">
       <div class="kpi-card" onclick="showPage('alunos',document.querySelector('.nav-item[data-page=alunos]'))">
         <div class="kpi-icon" style="background:rgba(139,26,42,.1)"><span class="material-icons-round" style="color:var(--primary)">people</span></div>
-        <div class="kpi-value" style="color:var(--primary)">${d?.totalAlunos||d?.alunosAtivos||'—'}</div>
+        <div class="kpi-value" style="color:var(--primary)">${d?.totalAlunos??'—'}</div>
         <div class="kpi-label">Alunos Ativos</div>
       </div>
       <div class="kpi-card" onclick="showPage('financeiro',document.querySelector('.nav-item[data-page=financeiro]'))">
         <div class="kpi-icon" style="background:rgba(211,47,47,.1)"><span class="material-icons-round" style="color:var(--error)">warning_amber</span></div>
-        <div class="kpi-value" style="color:var(--error)">${d?.cobrancasVencidas||'—'}</div>
-        <div class="kpi-label">Cobranças Vencidas</div>
+        <div class="kpi-value" style="color:var(--error)">${d?.alunosInadimplentes??'—'}</div>
+        <div class="kpi-label">Inadimplentes</div>
       </div>
       <div class="kpi-card" onclick="showPage('matriculas',document.querySelector('.nav-item[data-page=matriculas]'))">
-        <div class="kpi-icon" style="background:rgba(56,142,60,.1)"><span class="material-icons-round" style="color:var(--success)">assignment_turned_in</span></div>
-        <div class="kpi-value" style="color:var(--success)">${d?.novasMatriculas||d?.matriculasAtivas||'—'}</div>
-        <div class="kpi-label">Matrículas</div>
+        <div class="kpi-icon" style="background:rgba(56,142,60,.1)"><span class="material-icons-round" style="color:var(--success)">school</span></div>
+        <div class="kpi-value" style="color:var(--success)">${d?.turmas??'—'}</div>
+        <div class="kpi-label">Turmas Ativas</div>
       </div>
-      <div class="kpi-card" onclick="showPage('agenda',document.querySelector('.nav-item[data-page=agenda]'))">
-        <div class="kpi-icon" style="background:rgba(25,118,210,.1)"><span class="material-icons-round" style="color:var(--info)">event</span></div>
-        <div class="kpi-value" style="color:var(--info)">${d?.eventosHoje||'—'}</div>
-        <div class="kpi-label">Eventos Hoje</div>
+      <div class="kpi-card" onclick="showPage('financeiro',document.querySelector('.nav-item[data-page=financeiro]'))">
+        <div class="kpi-icon" style="background:rgba(245,124,0,.1)"><span class="material-icons-round" style="color:var(--warning)">receipt_long</span></div>
+        <div class="kpi-value" style="color:var(--warning)">${d?.cobrancasVencidas??'—'}</div>
+        <div class="kpi-label">Parcelas Vencidas</div>
       </div>
     </div>
+    ${d?.receitaMes!=null?`
+    <div class="section-header"><h2>Financeiro – Visão Geral</h2><button class="btn-link" onclick="showPage('financeiro',document.querySelector('.nav-item[data-page=financeiro]'))">Ver tudo</button></div>
+    <div class="card"><div class="card-body">
+      <div class="fin-row">
+        <div class="fin-tile" style="background:rgba(56,142,60,.08)"><div class="material-icons-round" style="color:var(--success);font-size:18px">trending_up</div><div class="amount" style="color:var(--success)">${fmtR(d.receitaMes)}</div><div class="label">Recebido no mês</div></div>
+        <div class="fin-tile" style="background:rgba(245,124,0,.08)"><div class="material-icons-round" style="color:var(--warning);font-size:18px">schedule</div><div class="amount" style="color:var(--warning)">${fmtR(d.aReceberMes)}</div><div class="label">A receber no mês</div></div>
+        <div class="fin-tile" style="background:rgba(211,47,47,.08)"><div class="material-icons-round" style="color:var(--error);font-size:18px">trending_down</div><div class="amount" style="color:var(--error)">${fmtR(d.totalVencido)}</div><div class="label">Total vencido</div></div>
+      </div>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:13px;color:var(--text2)">Taxa de Inadimplência</div>
+        <div style="display:flex;align-items:center;gap:10px;flex:1;max-width:60%">
+          <div class="progress-bar" style="flex:1"><div class="progress-fill" style="width:${d.inadimplencia}%;background:${d.inadimplencia>20?'var(--error)':d.inadimplencia>10?'var(--warning)':'var(--success)'}"></div></div>
+          <strong style="color:${d.inadimplencia>20?'var(--error)':'var(--warning)'};font-size:14px">${d.inadimplencia}%</strong>
+        </div>
+      </div>
+    </div></div>
+    <div class="card" onclick="showPage('financeiro',document.querySelector('.nav-item[data-page=financeiro]'))" style="cursor:pointer"><div class="card-body" style="display:flex;align-items:center;gap:14px">
+      <div class="avatar-circle" style="background:rgba(211,47,47,.1)"><span class="material-icons-round" style="color:var(--error)">priority_high</span></div>
+      <div style="flex:1"><div style="font-weight:700">Contas em aberto</div><div style="font-size:13px;color:var(--text2)">${d.cobrancasPendentes} pendentes + ${d.cobrancasVencidas} vencidas</div></div>
+      <span class="material-icons-round" style="color:var(--text2)">chevron_right</span>
+    </div></div>
+    `:`
+    <div class="card"><div class="card-body" style="color:var(--text2);font-size:13px;text-align:center;padding:20px">
+      <span class="material-icons-round" style="color:var(--border);font-size:40px;display:block;margin-bottom:8px">sync</span>
+      Carregando dados do Sponte...
+    </div></div>`}
     <div class="section-header"><h2>Acesso Rápido</h2></div>
     <div class="quick-grid">
       <div class="quick-item" onclick="openForm('aluno')"><span class="material-icons-round">person_add</span><span>Nova Matrícula</span></div>
@@ -971,20 +1002,6 @@ async function renderDashboard() {
       <div class="quick-item" onclick="openForm('comunicado')"><span class="material-icons-round">campaign</span><span>Comunicado</span></div>
       <div class="quick-item" onclick="openForm('evento')"><span class="material-icons-round">event_note</span><span>Novo Evento</span></div>
     </div>
-    ${d?.receitaMes!=null?`
-    <div class="section-header"><h2>Financeiro – Mês Atual</h2><button class="btn-link" onclick="showPage('financeiro',document.querySelector('.nav-item[data-page=financeiro]'))">Ver tudo</button></div>
-    <div class="card"><div class="card-body">
-      <div class="fin-row">
-        <div class="fin-tile" style="background:rgba(56,142,60,.08)"><div class="amount" style="color:var(--success)">${fmtR(d.receitaMes)}</div><div class="label">Recebido</div></div>
-        <div class="fin-tile" style="background:rgba(245,124,0,.08)"><div class="amount" style="color:var(--warning)">${d.inadimplencia?.toFixed(1)||'0'}%</div><div class="label">Inadimplência</div></div>
-        <div class="fin-tile" style="background:rgba(211,47,47,.08)"><div class="amount" style="color:var(--error)">${d.cobrancasVencidas||0}</div><div class="label">Vencidas</div></div>
-      </div>
-    </div></div>`:`
-    <div class="card"><div class="card-body" style="color:var(--text2);font-size:13px;text-align:center;padding:20px">
-      <span class="material-icons-round" style="color:var(--border);font-size:40px;display:block;margin-bottom:8px">sync</span>
-      Conecte à API Sponte para ver dados em tempo real.<br>
-      <small>nCodigoCliente: 17698 · Token configurado</small>
-    </div></div>`}
   `);
 }
 
@@ -993,52 +1010,92 @@ async function renderDashboard() {
 // ══════════════════════════════════════════════════════════════════
 async function renderAlunos(busca='') {
   loading();
-  const res = await api(`/api/alunos${busca?'?busca='+encodeURIComponent(busca):''}`);
-  const lista = res.ok ? (Array.isArray(res.data)?res.data:(res.data?.data||[])) : [];
+
+  // Carregar turmas uma vez (cache em S)
+  if (!S.turmas) {
+    const tr = await api('/api/alunos/por-turma');
+    S.turmas = tr.ok ? tr.data : [];
+    S.turmaAtual = S.turmas[0]?.id || '131';
+  }
+
+  let lista = [];
+  let res;
+  if (busca && busca.length >= 3) {
+    res = await api(`/api/alunos?busca=${encodeURIComponent(busca)}`);
+    lista = res.ok ? (Array.isArray(res.data)?res.data:[]) : [];
+  } else {
+    res = await api(`/api/alunos?turmaId=${S.turmaAtual}`);
+    lista = res.ok ? (Array.isArray(res.data)?res.data:[]) : [];
+  }
+
+  const turmaNome = S.turmas.find(t=>String(t.id)===String(S.turmaAtual))?.nome || '';
 
   setContent(`
-    <div class="search-wrap" style="margin:-20px -20px 16px;border-radius:0">
-      <input class="search-input" placeholder="Buscar por nome, RA ou CPF..." value="${busca}"
+    <div class="search-wrap" style="margin:-20px -20px 12px;border-radius:0">
+      <input class="search-input" placeholder="Buscar por nome (mín. 3 letras)..." value="${busca}"
         oninput="clearTimeout(window._bt);window._bt=setTimeout(()=>renderAlunos(this.value),500)">
     </div>
+    ${!busca?`
+    <div style="margin-bottom:14px">
+      <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:6px">TURMA</label>
+      <select onchange="S.turmaAtual=this.value;renderAlunos()" style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:'Nunito',sans-serif;background:#fff">
+        ${S.turmas.map(t=>`<option value="${t.id}" ${String(t.id)===String(S.turmaAtual)?'selected':''}>${t.nome} (${t.qtdAlunos})</option>`).join('')}
+      </select>
+    </div>`:''}
     ${!lista.length?`<div class="card"><div class="card-body" style="text-align:center;color:var(--text2);padding:32px">
-      ${res.ok?'<span class="material-icons-round" style="font-size:48px;display:block">people_outline</span>Nenhum aluno encontrado.':
-      `<span class="material-icons-round" style="font-size:40px;display:block;color:var(--error)">error_outline</span>Erro ao carregar alunos do Sponte.<br><small>${res.data?.error||''}</small>`}
+      ${res.ok?'<span class="material-icons-round" style="font-size:48px;display:block">people_outline</span>'+(busca?'Nenhum aluno encontrado para "'+busca+'".':'Turma sem alunos.'):
+      `<span class="material-icons-round" style="font-size:40px;display:block;color:var(--error)">error_outline</span>Erro ao carregar do Sponte.`}
     </div></div>`:
-    `<div class="card" style="margin:0">${lista.map(a=>{
+    `<div style="font-size:12px;color:var(--text2);margin-bottom:8px">${busca?`${lista.length} resultado(s)`:`${turmaNome} · ${lista.length} aluno(s)`}</div>
+    <div class="card" style="margin:0">${lista.map(a=>{
       const nome=a.sNome||a.nome||'—';
-      const serie=a.serie||a.sSerie||a.dSerie||'';
-      const ra=a.ra||a.sRa||a.nCodigo||'';
+      const serie=a.serie||a.sSerie||a.turma||'';
+      const ra=a.ra||a.sRa||'';
       const st=a.status||a.sStatus||'ativo';
-      return `<div class="list-item" onclick="abrirAluno(${JSON.stringify(a).replace(/'/g,"\\'")})">
+      return `<div class="list-item" onclick="abrirAlunoId('${a.id||a.nCodigo}','${nome.replace(/'/g,"\\'")}')">
         <div class="avatar-circle">${initials(nome).toUpperCase()}</div>
-        <div class="list-info"><div class="name">${nome}</div><div class="sub">${serie}${ra?' · RA '+ra:''}</div></div>
+        <div class="list-info"><div class="name">${nome}</div><div class="sub">${serie}${ra?' · '+ra:''}</div></div>
         ${statusBadge(st)}
       </div>`;
     }).join('')}</div>`}
   `);
 }
 
+// Abre aluno carregando detalhes completos do Sponte por ID
+async function abrirAlunoId(id, nome){
+  openPanel(nome,'<div class="loading-state"><div class="spinner-dark"></div><br>Carregando dados...</div>');
+  const res = await api(`/api/aluno/${id}`);
+  if(!res.ok || !res.data){ document.getElementById('panel-body').innerHTML='<div style="padding:24px;text-align:center;color:var(--error)">Erro ao carregar aluno.</div>'; return; }
+  abrirAluno(res.data, true);
+}
+
 function abrirAluno(a) {
-  const nome=a.sNome||a.nome||'—';
-  openPanel(nome, `
-    <div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg);border-radius:12px;margin-bottom:20px">
+  const nome=a.nome||a.sNome||'—';
+  const id=a.id||a.nCodigo||'';
+  const resp = (a.responsaveis||[]);
+  document.getElementById('panel-title').textContent = nome;
+  document.getElementById('panel-body').innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg);border-radius:12px;margin-bottom:16px">
       <div class="avatar-circle" style="width:60px;height:60px;font-size:20px">${initials(nome).toUpperCase()}</div>
       <div>
         <div style="font-size:16px;font-weight:700">${nome}</div>
-        <div style="font-size:13px;color:var(--text2)">${a.serie||a.sSerie||''} ${a.periodo||a.sPeriodo?'· '+(a.periodo||a.sPeriodo):''}</div>
-        <div style="font-size:12px;color:var(--text2)">RA: ${a.ra||a.sRa||a.nCodigo||'—'}</div>
+        <div style="font-size:13px;color:var(--text2)">${a.turma||a.serie||''}</div>
+        <div style="font-size:12px;color:var(--text2)">${a.ra?'Matrícula: '+a.ra:''}</div>
+        ${a.inadimplente?'<span class="badge red" style="margin-top:4px;display:inline-block">INADIMPLENTE</span>':'<span class="badge green" style="margin-top:4px;display:inline-block">EM DIA</span>'}
       </div>
     </div>
-    ${a.cpf||a.sCpf?`<div class="info-row"><span class="info-label">CPF</span><span class="info-value">${a.cpf||a.sCpf}</span></div>`:''}
-    ${a.dNascimento||a.nascimento?`<div class="info-row"><span class="info-label">Nascimento</span><span class="info-value">${fmtDate(a.dNascimento||a.nascimento)}</span></div>`:''}
-    ${a.email||a.sEmail?`<div class="info-row"><span class="info-label">E-mail</span><span class="info-value">${a.email||a.sEmail}</span></div>`:''}
-    ${a.telefone||a.sTelefone?`<div class="info-row"><span class="info-label">Telefone</span><span class="info-value">${a.telefone||a.sTelefone}</span></div>`:''}
+    ${a.cpf?`<div class="info-row"><span class="info-label">CPF</span><span class="info-value">${a.cpf}</span></div>`:''}
+    ${a.dataNascimento?`<div class="info-row"><span class="info-label">Nascimento</span><span class="info-value">${a.dataNascimento}</span></div>`:''}
+    ${a.sexo?`<div class="info-row"><span class="info-label">Sexo</span><span class="info-value">${a.sexo}</span></div>`:''}
+    ${a.telefone?`<div class="info-row"><span class="info-label">Telefone</span><span class="info-value">${a.telefone}</span></div>`:''}
+    ${a.email?`<div class="info-row"><span class="info-label">E-mail</span><span class="info-value">${a.email}</span></div>`:''}
+    ${a.endereco?`<div class="info-row"><span class="info-label">Endereço</span><span class="info-value">${a.endereco}</span></div>`:''}
+    ${resp.length?`<div style="margin-top:14px;font-size:13px;font-weight:700;color:var(--primary)">Responsáveis</div>
+      ${resp.map(r=>`<div class="info-row"><span class="info-label">${r.parentesco||'Resp.'}</span><span class="info-value">${r.nome}</span></div>`).join('')}`:''}
     <div style="margin-top:20px;display:flex;gap:10px">
-      <button class="btn-outline" style="flex:1" onclick="verFinanceiroAluno('${a.nCodigo||a.id||''}','${nome.replace(/'/g,"\\'")}')" >Ver Financeiro</button>
-      <button class="btn-primary-sm" style="flex:1" onclick="openForm('cobranca');closePanel()">Nova Cobrança</button>
+      <button class="btn-primary-sm" style="flex:1" onclick="verFinanceiroAluno('${id}','${nome.replace(/'/g,"\\'")}')">Ver Financeiro</button>
     </div>
-  `);
+  `;
 }
 
 async function verFinanceiroAluno(id, nome) {
@@ -1046,57 +1103,153 @@ async function verFinanceiroAluno(id, nome) {
   document.getElementById('panel-body').innerHTML='<div class="loading-state"><div class="spinner-dark"></div><br>Carregando...</div>';
   const res = await api(`/api/financeiro/${id}`);
   const titulos = res.ok ? (res.data.titulos||[]) : [];
-  document.getElementById('panel-body').innerHTML = titulos.length?
+  const r = res.ok ? (res.data.resumo||{}) : {};
+  document.getElementById('panel-body').innerHTML = (titulos.length?`
+    <div class="fin-row" style="margin-bottom:16px">
+      <div class="fin-tile" style="background:rgba(56,142,60,.08)"><div class="amount" style="color:var(--success);font-size:13px">${fmtR(r.totalRecebido)}</div><div class="label">Pago</div></div>
+      <div class="fin-tile" style="background:rgba(245,124,0,.08)"><div class="amount" style="color:var(--warning);font-size:13px">${fmtR(r.totalReceber)}</div><div class="label">A pagar</div></div>
+      <div class="fin-tile" style="background:rgba(211,47,47,.08)"><div class="amount" style="color:var(--error);font-size:13px">${fmtR(r.totalVencido)}</div><div class="label">Vencido</div></div>
+    </div>` : '') +
+    (titulos.length?
     titulos.map(t=>{
-      const val=t.valor||t.nValor||t.nValorTitulo||0;
-      const st=t.status||t.sStatus||'pendente';
-      const cor=st.toLowerCase().includes('pag')?'var(--success)':st.toLowerCase().includes('venc')?'var(--error)':'var(--warning)';
+      const cor=t.status==='pago'?'var(--success)':t.status==='vencido'?'var(--error)':'var(--warning)';
       return `<div class="fatura-card">
         <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><div style="font-size:13px;font-weight:600">${t.descricao||t.sDescricao||t.sHistorico||'Cobrança'}</div><div style="font-size:12px;color:var(--text2)">Venc: ${fmtDate(t.vencimento||t.dVencimento)}</div></div>
-          <div style="text-align:right"><div style="font-size:16px;font-weight:800;color:${cor}">${fmtR(val)}</div>${statusBadge(st)}</div>
+          <div><div style="font-size:13px;font-weight:600">${t.categoria||'Mensalidade'} · Parc. ${t.numeroParcela}</div><div style="font-size:12px;color:var(--text2)">Venc: ${fmtDate2(t.vencimento)}${t.bolsa?' · '+t.bolsa:''}</div></div>
+          <div style="text-align:right"><div style="font-size:16px;font-weight:800;color:${cor}">${fmtR(parseValBR(t.valor))}</div>${statusBadge(t.status)}</div>
         </div>
       </div>`;
     }).join(''):
-    '<div style="padding:24px;text-align:center;color:var(--text2)">Nenhum título encontrado.</div>';
+    '<div style="padding:24px;text-align:center;color:var(--text2)">Nenhum título encontrado.</div>');
 }
 
 // ══════════════════════════════════════════════════════════════════
 // SECRETARIA — FINANCEIRO
 // ══════════════════════════════════════════════════════════════════
-async function renderFinanceiro(tabStatus=null) {
+async function renderFinanceiro(tabStatus=null, page=1) {
+  if (tabStatus) S.finTab = tabStatus;
   loading();
-  const st=tabStatus||S.finTab;
-  const q=st!=='todas'?`?status=${st==='pagas'?'pago':st==='vencidas'?'vencido':'pendente'}`:'';
-  const res = await api('/api/financeiro'+q);
-  const lista = res.ok?(Array.isArray(res.data)?res.data:(res.data?.data||[])):[];
+  const st = S.finTab || 'todas';
+  const statusMap = { todas:'', pendentes:'pendente', pagas:'pago', vencidas:'vencido' };
+  const busca = S.finBusca || '';
+  const params = new URLSearchParams({ page, pageSize:50 });
+  if (statusMap[st]) params.set('status', statusMap[st]);
+  if (busca) params.set('busca', busca);
+
+  const res = await api('/api/financeiro?'+params.toString());
+  if (!res.ok) {
+    setContent(`<div class="card"><div class="card-body" style="text-align:center;color:var(--text2);padding:32px">
+      <span class="material-icons-round" style="font-size:40px;display:block;color:var(--error)">error_outline</span>
+      Erro ao carregar do Sponte.<br><small>${res.data?.error||''}</small></div></div>`);
+    return;
+  }
+
+  const { titulos=[], resumo={}, paginacao={} } = res.data;
 
   setContent(`
-    <div class="tabs" style="border-radius:12px 12px 0 0;margin:-20px -20px 0">
-      ${['todas','pendentes','pagas','vencidas'].map(t=>`<div class="tab${S.finTab===t?' active':''}" onclick="S.finTab='${t}';renderFinanceiro('${t}')">${t.charAt(0).toUpperCase()+t.slice(1)}</div>`).join('')}
+    <!-- RESUMO GERAL -->
+    <div class="card" style="margin-bottom:14px"><div class="card-body" style="padding:14px">
+      <div class="fin-row">
+        <div class="fin-tile" style="background:rgba(56,142,60,.08)">
+          <div class="amount" style="color:var(--success);font-size:14px">${fmtR(resumo.totalRecebido)}</div>
+          <div class="label">Recebido (${resumo.qtdPagas||0})</div>
+        </div>
+        <div class="fin-tile" style="background:rgba(245,124,0,.08)">
+          <div class="amount" style="color:var(--warning);font-size:14px">${fmtR(resumo.totalAReceber)}</div>
+          <div class="label">A receber (${resumo.qtdPendentes||0})</div>
+        </div>
+        <div class="fin-tile" style="background:rgba(211,47,47,.08)">
+          <div class="amount" style="color:var(--error);font-size:14px">${fmtR(resumo.totalVencido)}</div>
+          <div class="label">Vencido (${resumo.qtdVencidas||0})</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <button class="btn-outline" style="flex:1;padding:9px;font-size:13px" onclick="verInadimplentes()">
+          <span style="display:inline-flex;align-items:center;gap:6px;justify-content:center"><span class="material-icons-round" style="font-size:16px">groups</span>${resumo.alunosInadimplentes||0} Inadimplentes</span>
+        </button>
+        <button class="btn-outline" style="flex:1;padding:9px;font-size:13px" onclick="verCategorias()">
+          <span style="display:inline-flex;align-items:center;gap:6px;justify-content:center"><span class="material-icons-round" style="font-size:16px">category</span>Por Categoria</span>
+        </button>
+      </div>
     </div>
-    <div style="height:16px"></div>
-    ${!lista.length?`<div class="card"><div class="card-body" style="text-align:center;color:var(--text2);padding:32px">
-      ${res.ok?`<span class="material-icons-round" style="font-size:48px;display:block">receipt_long</span>Nenhum título encontrado.`:
-      `<span class="material-icons-round" style="font-size:40px;display:block;color:var(--error)">error_outline</span>Erro ao carregar do Sponte.<br><small>${res.data?.error||''}</small>`}
-    </div></div>`:
-    `<div class="card" style="margin:0">${lista.map(t=>{
-      const val=t.valor||t.nValor||t.nValorTitulo||0;
-      const st2=t.status||t.sStatus||'pendente';
-      const cor=st2.toLowerCase().includes('pag')?'var(--success)':st2.toLowerCase().includes('venc')?'var(--error)':'var(--warning)';
-      const nome=t.aluno||t.sAluno||t.nomeAluno||'—';
-      const desc=t.descricao||t.sDescricao||t.sHistorico||'Cobrança';
-      const venc=t.vencimento||t.dVencimento||t.dDataVencimento;
-      return `<div class="list-item" onclick="showFatura(${JSON.stringify(t).replace(/'/g,"\\'")})">
-        <div class="avatar-circle" style="background:${cor}20"><span class="material-icons-round" style="font-size:20px;color:${cor}">receipt_long</span></div>
-        <div class="list-info"><div class="name">${nome}</div><div class="sub">${desc}</div></div>
+
+    <!-- BUSCA -->
+    <div class="search-wrap" style="margin:0 0 12px;border-radius:12px;border:1px solid var(--border)">
+      <input class="search-input" placeholder="Buscar por aluno, categoria..." value="${busca}"
+        oninput="clearTimeout(window._fb);window._fb=setTimeout(()=>{S.finBusca=this.value;renderFinanceiro();},500)">
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs" style="border-radius:12px 12px 0 0">
+      ${['todas','pendentes','pagas','vencidas'].map(t=>`<div class="tab${st===t?' active':''}" onclick="renderFinanceiro('${t}')">${t.charAt(0).toUpperCase()+t.slice(1)}</div>`).join('')}
+    </div>
+
+    ${!titulos.length?`<div class="card" style="border-radius:0 0 16px 16px;margin-top:0"><div class="card-body" style="text-align:center;color:var(--text2);padding:32px">
+      <span class="material-icons-round" style="font-size:48px;display:block">receipt_long</span>Nenhum título encontrado.</div></div>`:
+    `<div class="card" style="border-radius:0 0 16px 16px;margin-top:0">${titulos.map(t=>{
+      const cor=t.status==='pago'?'var(--success)':t.status==='vencido'?'var(--error)':'var(--warning)';
+      return `<div class="list-item" onclick="showFatura(${JSON.stringify(t).replace(/"/g,'&quot;').replace(/'/g,"\\'")})">
+        <div class="avatar-circle" style="background:${cor}20;font-size:13px">${initials(t.sacado||'?').toUpperCase()}</div>
+        <div class="list-info">
+          <div class="name">${t.sacado||'—'}</div>
+          <div class="sub">${t.categoria||'Mensalidade'} · Parc. ${t.numeroParcela} · venc ${fmtDate2(t.vencimento)}</div>
+        </div>
         <div style="text-align:right">
-          <div style="font-size:15px;font-weight:800;color:${cor}">${fmtR(val)}</div>
-          <div style="margin-top:4px">${statusBadge(st2)}</div>
+          <div style="font-size:14px;font-weight:800;color:${cor}">${fmtR(parseValBR(t.valor))}</div>
+          <div style="margin-top:4px">${statusBadge(t.status)}</div>
         </div>
       </div>`;
     }).join('')}</div>`}
+
+    ${paginacao.totalPaginas>1?`
+    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:16px">
+      <button class="btn-outline" style="width:auto;padding:8px 16px;${paginacao.page<=1?'opacity:.4;pointer-events:none':''}" onclick="renderFinanceiro(null,${paginacao.page-1})">‹ Anterior</button>
+      <span style="font-size:13px;color:var(--text2)">Página ${paginacao.page} de ${paginacao.totalPaginas} · ${paginacao.total} títulos</span>
+      <button class="btn-outline" style="width:auto;padding:8px 16px;${paginacao.page>=paginacao.totalPaginas?'opacity:.4;pointer-events:none':''}" onclick="renderFinanceiro(null,${paginacao.page+1})">Próxima ›</button>
+    </div>`:''}
+    <div style="height:20px"></div>
   `);
+}
+
+// Formato de data curto DD/MM (recebe DD/MM/YYYY)
+function fmtDate2(s){ if(!s) return '—'; const p=s.split('/'); return p.length>=2?`${p[0]}/${p[1]}`:s; }
+// Parse valor BR "3.082,00" → 3082.00
+function parseValBR(v){ if(typeof v==='number') return v; return Number((v||'0').toString().replace(/\./g,'').replace(',','.')); }
+
+// Painel de inadimplentes
+async function verInadimplentes(){
+  openPanel('Inadimplentes','<div class="loading-state"><div class="spinner-dark"></div><br>Consultando Sponte...</div>');
+  const res = await api('/api/inadimplentes');
+  if(!res.ok){ document.getElementById('panel-body').innerHTML='<div style="padding:24px;text-align:center;color:var(--error)">Erro ao carregar.</div>'; return; }
+  const { inadimplentes=[], totalGeral=0, qtdAlunos=0 } = res.data;
+  document.getElementById('panel-body').innerHTML = `
+    <div style="padding:14px;background:rgba(211,47,47,.08);border-radius:10px;margin-bottom:16px">
+      <div style="font-size:13px;color:var(--text2)">Total em Atraso · ${qtdAlunos} alunos</div>
+      <div style="font-size:24px;font-weight:800;color:var(--error)">${fmtR(totalGeral)}</div>
+    </div>
+    ${inadimplentes.map(a=>`
+      <div class="list-item" style="padding:12px 0">
+        <div class="avatar-circle" style="background:rgba(211,47,47,.1);color:var(--error);font-size:13px">${initials(a.sacado||'?').toUpperCase()}</div>
+        <div class="list-info"><div class="name">${a.sacado||'—'}</div><div class="sub">${a.qtd} parcela(s) vencida(s)</div></div>
+        <div style="font-weight:800;color:var(--error);font-size:14px">${fmtR(a.total)}</div>
+      </div>`).join('')}
+  `;
+}
+
+// Painel de categorias
+async function verCategorias(){
+  openPanel('Por Categoria','<div class="loading-state"><div class="spinner-dark"></div><br>Consultando...</div>');
+  const res = await api('/api/financeiro-categorias');
+  if(!res.ok){ document.getElementById('panel-body').innerHTML='<div style="padding:24px;text-align:center;color:var(--error)">Erro.</div>'; return; }
+  const cats = res.data||[];
+  document.getElementById('panel-body').innerHTML = cats.map(c=>`
+    <div class="list-item" style="padding:12px 0">
+      <div class="list-info"><div class="name">${c.categoria}</div><div class="sub">${c.qtd} parcelas</div></div>
+      <div style="text-align:right">
+        ${c.vencido>0?`<div style="font-size:13px;font-weight:700;color:var(--error)">${fmtR(c.vencido)} venc.</div>`:''}
+        ${c.pendente>0?`<div style="font-size:12px;color:var(--warning)">${fmtR(c.pendente)} pend.</div>`:''}
+      </div>
+    </div>`).join('') || '<div style="padding:24px;text-align:center;color:var(--text2)">Sem dados.</div>';
 }
 
 // ══════════════════════════════════════════════════════════════════
