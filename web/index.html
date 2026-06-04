@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Maple Bear Valqueire – Secretaria</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+  <style>
+    :root {
+      --primary:#8B1A2A; --primary-dark:#6B1220; --primary-light:#B02235;
+      --gold:#C8952A; --gold-light:#E8B84B;
+      --bg:#F5F5F5; --surface:#fff; --text:#212121; --text2:#757575;
+      --border:#E0E0E0; --success:#388E3C; --warning:#F57C00;
+      --error:#D32F2F; --info:#1976D2; --sidebar-w:220px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+    /* ── LOGIN ── */
+    #login-page{
+      min-height:100vh;
+      background:linear-gradient(160deg,var(--primary) 60%,var(--primary-dark));
+      display:flex;align-items:center;justify-content:center;padding:24px;
+    }
+    .login-box{
+      background:#fff;border-radius:24px;padding:36px 32px;
+      width:100%;max-width:420px;
+      box-shadow:0 20px 60px rgba(0,0,0,.18);
+    }
+    .login-logo{display:flex;flex-direction:column;align-items:center;margin-bottom:28px}
+    .logo-circle{
+      width:88px;height:88px;background:var(--primary);border-radius:50%;
+      display:flex;align-items:center;justify-content:center;margin-bottom:14px;
+      box-shadow:0 8px 24px rgba(139,26,42,.35);
+    }
+    .logo-circle .material-icons-round{font-size:48px;color:#fff}
+    .login-logo h1{font-size:26px;font-weight:800;color:var(--primary);line-height:1.1;text-align:center}
+    .login-logo small{font-size:13px;color:var(--gold);font-weight:600;margin-top:4px}
+
+    .login-tabs{display:flex;border-radius:12px;background:var(--bg);padding:4px;margin-bottom:24px;gap:4px}
+    .login-tab{
+      flex:1;padding:10px;text-align:center;border-radius:9px;cursor:pointer;
+      font-size:13px;font-weight:600;color:var(--text2);transition:all .2s;
+    }
+    .login-tab.active{background:#fff;color:var(--primary);box-shadow:0 2px 8px rgba(0,0,0,.1)}
+
+    .form-group{margin-bottom:14px}
+    .form-group label{display:block;font-size:12px;font-weight:700;color:var(--text2);margin-bottom:6px}
+    .form-group input{
+      width:100%;padding:14px 16px;border:1.5px solid var(--border);
+      border-radius:12px;font-size:14px;font-family:'Nunito',sans-serif;
+      outline:none;transition:border .2s;
+    }
+    .form-group input:focus{border-color:var(--primary)}
+    .btn-primary{
+      width:100%;padding:15px;background:var(--primary);color:#fff;
+      border:none;border-radius:12px;font-size:16px;font-weight:700;
+      font-family:'Nunito',sans-serif;cursor:pointer;transition:background .2s;
+      display:flex;align-items:center;justify-content:center;gap:8px;
+    }
+    .btn-primary:hover{background:var(--primary-dark)}
+    .btn-primary:disabled{opacity:.6;cursor:not-allowed}
+    .login-footer{text-align:center;font-size:12px;color:var(--text2);margin-top:20px}
+    .login-error{
+      background:rgba(211,47,47,.08);border:1px solid rgba(211,47,47,.3);
+      border-radius:10px;padding:12px 14px;font-size:13px;color:var(--error);
+      margin-bottom:14px;display:none;
+    }
+    .cpf-hint{font-size:11px;color:var(--text2);margin-top:6px}
+
+    /* ── APP LAYOUT ── */
+    #app{display:none;height:100vh;flex-direction:row}
+    .sidebar{width:var(--sidebar-w);background:var(--primary);display:flex;flex-direction:column;flex-shrink:0}
+    .sidebar-logo{padding:24px 16px 18px;display:flex;flex-direction:column;align-items:center;border-bottom:1px solid rgba(255,255,255,.1)}
+    .sidebar-logo .circle{width:60px;height:60px;background:rgba(255,255,255,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+    .sidebar-logo .circle .material-icons-round{font-size:34px;color:#fff}
+    .sidebar-logo h2{color:#fff;font-size:14px;font-weight:800;text-align:center;line-height:1.2}
+    .sidebar-logo small{color:var(--gold-light);font-size:11px;margin-top:2px}
+    .sidebar-nav{flex:1;padding:14px 10px}
+    .nav-item{
+      display:flex;align-items:center;gap:10px;padding:10px 12px;
+      border-radius:10px;cursor:pointer;transition:background .15s;
+      color:rgba(255,255,255,.72);font-size:13px;font-weight:500;margin-bottom:2px;
+    }
+    .nav-item:hover{background:rgba(255,255,255,.12);color:#fff}
+    .nav-item.active{background:rgba(255,255,255,.2);color:#fff;font-weight:700}
+    .nav-item .material-icons-round{font-size:20px}
+    .sidebar-user{
+      padding:14px;border-top:1px solid rgba(255,255,255,.1);
+      display:flex;align-items:center;gap:10px;
+    }
+    .sidebar-user .avatar{width:34px;height:34px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .sidebar-user .avatar .material-icons-round{font-size:18px;color:#fff}
+    .sidebar-user .name{color:#fff;font-size:12px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .sidebar-user .logout{color:rgba(255,255,255,.6);cursor:pointer;font-size:20px}
+    .sidebar-user .logout:hover{color:#fff}
+
+    .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+    .topbar{background:var(--primary);color:#fff;padding:0 24px;height:58px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+    .topbar h1{font-size:18px;font-weight:700}
+    .topbar .actions{display:flex;align-items:center;gap:8px}
+    .icon-btn{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.15);border:none;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center}
+    .content{flex:1;overflow-y:auto;padding:20px}
+
+    /* ── CARDS ── */
+    .kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-bottom:20px}
+    .kpi-card{background:#fff;border-radius:16px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.07);cursor:pointer;transition:transform .15s,box-shadow .15s}
+    .kpi-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.1)}
+    .kpi-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+    .kpi-value{font-size:28px;font-weight:800;line-height:1}
+    .kpi-label{font-size:11px;color:var(--text2);margin-top:4px}
+    .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .section-header h2{font-size:16px;font-weight:700}
+    .btn-link{background:none;border:none;color:var(--primary);font-size:13px;font-weight:600;cursor:pointer;font-family:'Nunito',sans-serif}
+    .card{background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.07);margin-bottom:16px;overflow:hidden}
+    .card-body{padding:18px}
+
+    /* ── GREETING ── */
+    .greeting-banner{
+      background:linear-gradient(120deg,var(--primary),var(--primary-light));
+      border-radius:16px;padding:20px 24px;color:#fff;margin-bottom:20px;
+      display:flex;align-items:center;justify-content:space-between;
+    }
+    .greeting-banner h2{font-size:20px;font-weight:700}
+    .greeting-banner p{font-size:13px;opacity:.75;margin-top:4px}
+
+    /* ── LIST ── */
+    .list-item{
+      display:flex;align-items:center;gap:14px;padding:14px 18px;
+      border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;
+    }
+    .list-item:last-child{border-bottom:none}
+    .list-item:hover{background:#FAFAFA}
+    .avatar-circle{
+      width:44px;height:44px;border-radius:50%;background:rgba(139,26,42,.1);
+      display:flex;align-items:center;justify-content:center;
+      font-weight:700;font-size:15px;color:var(--primary);flex-shrink:0;
+    }
+    .list-info{flex:1;min-width:0}
+    .list-info .name{font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .list-info .sub{font-size:12px;color:var(--text2);margin-top:2px}
+    .badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+    .badge.green{background:rgba(56,142,60,.12);color:var(--success)}
+    .badge.red{background:rgba(211,47,47,.12);color:var(--error)}
+    .badge.orange{background:rgba(245,124,0,.12);color:var(--warning)}
+    .badge.blue{background:rgba(25,118,210,.12);color:var(--info)}
+    .badge.gray{background:rgba(117,117,117,.12);color:var(--text2)}
+    .badge.gold{background:rgba(200,149,42,.15);color:var(--gold)}
+
+    /* ── FAB ── */
+    .fab{
+      position:fixed;bottom:28px;right:28px;background:var(--primary);color:#fff;
+      border:none;border-radius:28px;padding:14px 22px;font-size:14px;font-weight:700;
+      font-family:'Nunito',sans-serif;cursor:pointer;box-shadow:0 6px 20px rgba(139,26,42,.4);
+      display:flex;align-items:center;gap:8px;transition:background .2s,transform .15s;
+    }
+    .fab:hover{background:var(--primary-dark);transform:translateY(-2px)}
+    .fab .material-icons-round{font-size:20px}
+
+    /* ── TABS ── */
+    .tabs{display:flex;border-bottom:1px solid var(--border);background:#fff;overflow-x:auto}
+    .tab{
+      padding:13px 18px;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;
+      white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s;
+    }
+    .tab.active{color:var(--primary);border-bottom-color:var(--primary)}
+    .tab:hover:not(.active){color:var(--text)}
+
+    /* ── SEARCH ── */
+    .search-wrap{padding:14px 16px;background:#fff;border-bottom:1px solid var(--border)}
+    .search-input{
+      width:100%;padding:11px 16px 11px 42px;border:1.5px solid var(--border);border-radius:12px;
+      font-size:14px;font-family:'Nunito',sans-serif;outline:none;
+      background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23999'%3E%3Cpath d='M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z'/%3E%3C/svg%3E") no-repeat 14px center/18px;
+      transition:border .2s;
+    }
+    .search-input:focus{border-color:var(--primary)}
+
+    /* ── FIN TILES ── */
+    .fin-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+    .fin-tile{padding:14px;border-radius:12px}
+    .fin-tile .amount{font-size:15px;font-weight:800}
+    .fin-tile .label{font-size:11px;color:var(--text2);margin-top:3px}
+
+    /* ── PROGRESS ── */
+    .progress-bar{height:6px;border-radius:4px;background:var(--border);overflow:hidden;margin-top:4px}
+    .progress-fill{height:100%;border-radius:4px;background:var(--primary)}
+
+    /* ── CALENDAR ── */
+    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+    .cal-day-name{text-align:center;font-size:11px;font-weight:700;color:var(--text2);padding:6px 0}
+    .cal-cell{
+      aspect-ratio:1;display:flex;align-items:center;justify-content:center;
+      font-size:13px;border-radius:50%;cursor:pointer;transition:background .15s;position:relative;
+    }
+    .cal-cell:hover{background:rgba(139,26,42,.08)}
+    .cal-cell.today{background:var(--primary);color:#fff;font-weight:700}
+    .cal-cell.has-event::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--gold)}
+    .cal-cell.today::after{background:#fff}
+    .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+    .cal-nav{background:none;border:none;cursor:pointer;color:var(--primary);font-size:22px;padding:4px}
+
+    /* ── MOBILE NAV ── */
+    .mobile-nav{display:none;background:#fff;border-top:1px solid var(--border);flex-shrink:0}
+    .mobile-nav-inner{display:flex}
+    .mobile-nav-item{
+      flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      padding:10px 4px;cursor:pointer;color:var(--text2);font-size:10px;font-weight:600;gap:3px;transition:color .15s;
+    }
+    .mobile-nav-item .material-icons-round{font-size:22px}
+    .mobile-nav-item.active{color:var(--primary)}
+
+    /* ── PANEL ── */
+    .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100}
+    .panel{position:fixed;top:0;right:-100%;bottom:0;width:min(480px,100%);background:#fff;z-index:101;transition:right .3s ease;overflow-y:auto;box-shadow:-4px 0 24px rgba(0,0,0,.12)}
+    .panel.open{right:0}
+    .panel-header{background:var(--primary);color:#fff;padding:20px;display:flex;align-items:center;gap:12px}
+    .panel-close{background:none;border:none;color:#fff;cursor:pointer;padding:4px;border-radius:50%}
+    .panel-close:hover{background:rgba(255,255,255,.2)}
+    .panel-header h2{font-size:18px;font-weight:700}
+    .panel-body{padding:20px}
+    .info-row{display:flex;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+    .info-row:last-child{border-bottom:none}
+    .info-label{width:130px;color:var(--text2);flex-shrink:0}
+    .info-value{font-weight:600;flex:1}
+
+    /* ── FORM MODAL ── */
+    .form-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;overflow-y:auto;padding:24px}
+    .form-modal{background:#fff;border-radius:20px;max-width:560px;margin:auto;padding:28px}
+    .form-modal h2{font-size:20px;font-weight:800;color:var(--primary);margin-bottom:20px}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .field{margin-bottom:14px}
+    .field label{display:block;font-size:12px;font-weight:700;color:var(--text2);margin-bottom:6px}
+    .field input,.field select,.field textarea{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:'Nunito',sans-serif;outline:none;transition:border .2s}
+    .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--primary)}
+    .field textarea{resize:vertical;min-height:80px}
+    .btn-row{display:flex;gap:10px;margin-top:20px}
+    .btn-outline{flex:1;padding:13px;background:#fff;color:var(--primary);border:1.5px solid var(--primary);border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif}
+    .btn-primary-sm{flex:1;padding:13px;background:var(--primary);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif}
+
+    /* ── TOAST ── */
+    .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#323232;color:#fff;padding:12px 24px;border-radius:24px;font-size:14px;font-weight:600;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none}
+    .toast.show{opacity:1}
+    .toast.green{background:var(--success)}
+    .toast.red{background:var(--error)}
+
+    /* ── QUICK ACCESS ── */
+    .quick-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+    .quick-item{
+      background:#fff;border-radius:12px;padding:14px 8px;
+      display:flex;flex-direction:column;align-items:center;gap:8px;
+      cursor:pointer;border:1.5px solid var(--border);transition:border-color .15s,box-shadow .15s;
+    }
+    .quick-item:hover{border-color:var(--primary);box-shadow:0 4px 12px rgba(139,26,42,.12)}
+    .quick-item .material-icons-round{font-size:26px;color:var(--primary)}
+    .quick-item span{font-size:11px;font-weight:600;text-align:center;color:var(--text);line-height:1.3}
+
+    /* ── LOADING SPINNER ── */
+    .spinner{display:inline-block;width:20px;height:20px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .loading-state{padding:40px;text-align:center;color:var(--text2)}
+    .loading-state .spinner-dark{display:inline-block;width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite}
+
+    /* ── ALUNO VIEW (pais/alunos) ── */
+    .aluno-header{
+      background:linear-gradient(135deg,var(--primary),var(--primary-light));
+      border-radius:16px;padding:20px;color:#fff;margin-bottom:20px;
+    }
+    .aluno-header .aluno-nome{font-size:22px;font-weight:800;margin-bottom:4px}
+    .aluno-header .aluno-info{font-size:13px;opacity:.8}
+    .fatura-card{background:#fff;border-radius:14px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.07);margin-bottom:10px}
+    .fatura-valor{font-size:20px;font-weight:800}
+    .fatura-desc{font-size:13px;color:var(--text2);margin-top:3px}
+    .fatura-venc{font-size:12px;color:var(--text2);margin-top:4px}
+    .status-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700;margin-bottom:12px}
+    .status-pill.green{background:rgba(56,142,60,.12);color:var(--success)}
+    .status-pill.red{background:rgba(211,47,47,.12);color:var(--error)}
+    .status-pill.orange{background:rgba(245,124,0,.12);color:var(--warning)}
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:768px){
+      .sidebar{display:none}
+      #app{flex-direction:column}
+      .mobile-nav{display:block}
+      .content{padding:14px}
+      .kpi-grid{grid-template-columns:1fr 1fr}
+      .fin-row{grid-template-columns:1fr}
+      .quick-grid{grid-template-columns:repeat(4,1fr)}
+      .topbar{padding:0 16px}
+      .topbar h1{font-size:16px}
+      .form-row{grid-template-columns:1fr}
+      .fab{bottom:80px}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════ LOGIN ════════ -->
+<div id="login-page">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="logo-circle"><span class="material-icons-round">school</span></div>
+      <h1>Maple Bear<br>Valqueire</h1>
+      <small>Portal da Secretaria · 2026</small>
+    </div>
+
+    <div class="login-tabs">
+      <div class="login-tab active" onclick="switchLoginTab('cpf',this)" id="tab-cpf">Pais / Alunos</div>
+      <div class="login-tab" onclick="switchLoginTab('admin',this)" id="tab-admin">Secretaria</div>
+    </div>
+
+    <!-- LOGIN CPF (pais/alunos) -->
+    <div id="login-cpf-form">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.5">
+        Informe seu <strong>CPF</strong> e <strong>data de nascimento</strong> para acessar as informações do aluno.
+      </p>
+      <div id="cpf-error" class="login-error"></div>
+      <div class="form-group">
+        <label>CPF</label>
+        <input type="text" id="cpf-input" placeholder="000.000.000-00" maxlength="14" oninput="maskCPF(this)">
+      </div>
+      <div class="form-group">
+        <label>Data de Nascimento</label>
+        <input type="text" id="nasc-input" placeholder="DD/MM/AAAA" maxlength="10" oninput="maskDate(this)" onkeydown="if(event.key==='Enter')loginCPF()">
+        <div class="cpf-hint">Use a data de nascimento do responsável ou do aluno</div>
+      </div>
+      <button class="btn-primary" id="btn-cpf-login" onclick="loginCPF()">
+        <span>Acessar</span>
+      </button>
+    </div>
+
+    <!-- LOGIN ADMIN (secretaria) -->
+    <div id="login-admin-form" style="display:none">
+      <div id="admin-error" class="login-error"></div>
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" id="admin-email" placeholder="secretaria@maplebear.com.br">
+      </div>
+      <div class="form-group">
+        <label>Senha</label>
+        <input type="password" id="admin-senha" placeholder="••••••••" onkeydown="if(event.key==='Enter')loginAdmin()">
+      </div>
+      <button class="btn-primary" id="btn-admin-login" onclick="loginAdmin()">
+        <span>Entrar</span>
+      </button>
+    </div>
+
+    <div class="login-footer">Maple Bear Valqueire © 2026</div>
+  </div>
+</div>
+
+<!-- ════════ APP ════════ -->
+<div id="app">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="circle"><span class="material-icons-round">school</span></div>
+      <h2>Maple Bear<br>Valqueire</h2>
+      <small id="sidebar-ano">2026</small>
+    </div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-user">
+      <div class="avatar"><span class="material-icons-round">person</span></div>
+      <span class="name" id="sidebar-user-name">Usuário</span>
+      <span class="material-icons-round logout" onclick="doLogout()">logout</span>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <h1 id="page-title">Início</h1>
+      <div class="actions">
+        <button class="icon-btn" onclick=""><span class="material-icons-round" style="font-size:20px">notifications</span></button>
+      </div>
+    </div>
+    <div class="content" id="content">
+      <div class="loading-state"><div class="spinner-dark"></div><br>Carregando...</div>
+    </div>
+  </div>
+
+  <div class="mobile-nav">
+    <div class="mobile-nav-inner" id="mobile-nav"></div>
+  </div>
+</div>
+
+<!-- Panel -->
+<div class="overlay" id="overlay" onclick="closePanel()"></div>
+<div class="panel" id="panel">
+  <div class="panel-header">
+    <button class="panel-close" onclick="closePanel()"><span class="material-icons-round">close</span></button>
+    <h2 id="panel-title">Detalhes</h2>
+  </div>
+  <div class="panel-body" id="panel-body"></div>
+</div>
+
+<!-- Form Modal -->
+<div class="form-modal-overlay" id="form-modal-overlay" onclick="closeForm(event)">
+  <div class="form-modal" id="form-modal"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- FAB -->
+<button class="fab" id="fab" style="display:none" onclick="fabAction()">
+  <span class="material-icons-round">add</span><span id="fab-label">Novo</span>
+</button>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// ESTADO GLOBAL
+// ══════════════════════════════════════════════════════════════════
+const S = {
+  tipo: null,        // 'cpf' | 'admin'
+  usuario: null,
+  alunos: [],
+  alunoAtual: null,
+  curPage: 'dashboard',
+  calMonth: new Date(2026,0,1),
+  finTab: 'todas',
+  comTab: 'publicados',
+};
+
+const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? '' : '';  // mesmo servidor
+
+async function api(path, opts={}) {
+  try {
+    const r = await fetch(API + path, {
+      headers: { 'Content-Type': 'application/json' },
+      ...opts,
+      body: opts.body ? JSON.stringify(opts.body) : undefined,
+    });
+    const data = await r.json();
+    return { ok: r.ok, status: r.status, data };
+  } catch(e) {
+    return { ok: false, data: { error: e.message } };
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// MÁSCARAS
+// ══════════════════════════════════════════════════════════════════
+function maskCPF(el) {
+  let v = el.value.replace(/\D/g,'').substring(0,11);
+  if(v.length>9) v=v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/,'$1.$2.$3-$4');
+  else if(v.length>6) v=v.replace(/(\d{3})(\d{3})(\d{0,3})/,'$1.$2.$3');
+  else if(v.length>3) v=v.replace(/(\d{3})(\d{0,3})/,'$1.$2');
+  el.value=v;
+}
+function maskDate(el) {
+  let v = el.value.replace(/\D/g,'').substring(0,8);
+  if(v.length>4) v=v.replace(/(\d{2})(\d{2})(\d{0,4})/,'$1/$2/$3');
+  else if(v.length>2) v=v.replace(/(\d{2})(\d{0,2})/,'$1/$2');
+  el.value=v;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// TABS LOGIN
+// ══════════════════════════════════════════════════════════════════
+function switchLoginTab(tab, el) {
+  document.querySelectorAll('.login-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('login-cpf-form').style.display = tab==='cpf'?'':'none';
+  document.getElementById('login-admin-form').style.display = tab==='admin'?'':'none';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// LOGIN CPF
+// ══════════════════════════════════════════════════════════════════
+async function loginCPF() {
+  const cpf = document.getElementById('cpf-input').value;
+  const nasc = document.getElementById('nasc-input').value;
+  const errEl = document.getElementById('cpf-error');
+  const btn = document.getElementById('btn-cpf-login');
+
+  errEl.style.display='none';
+  if(cpf.replace(/\D/g,'').length<11){ errEl.textContent='CPF inválido.'; errEl.style.display='block'; return; }
+  if(nasc.length<10){ errEl.textContent='Data de nascimento inválida.'; errEl.style.display='block'; return; }
+
+  btn.disabled=true;
+  btn.innerHTML='<div class="spinner"></div>';
+
+  const res = await api('/api/login/cpf', { method:'POST', body:{ cpf, nascimento:nasc } });
+
+  btn.disabled=false;
+  btn.innerHTML='<span>Acessar</span>';
+
+  if(res.ok) {
+    S.tipo = 'cpf';
+    S.usuario = res.data.usuario;
+    S.alunos = res.data.alunos || [];
+    S.alunoAtual = S.alunos[0] || null;
+    entrarApp();
+  } else {
+    errEl.textContent = res.data?.error || 'Dados não encontrados. Verifique o CPF e a data informados.';
+    errEl.style.display='block';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// LOGIN ADMIN
+// ══════════════════════════════════════════════════════════════════
+async function loginAdmin() {
+  const email = document.getElementById('admin-email').value;
+  const senha = document.getElementById('admin-senha').value;
+  const errEl = document.getElementById('admin-error');
+  const btn = document.getElementById('btn-admin-login');
+
+  errEl.style.display='none';
+  if(!email || !senha){ errEl.textContent='Preencha e-mail e senha.'; errEl.style.display='block'; return; }
+
+  btn.disabled=true;
+  btn.innerHTML='<div class="spinner"></div>';
+
+  const res = await api('/api/login/admin', { method:'POST', body:{ email, senha } });
+
+  btn.disabled=false;
+  btn.innerHTML='<span>Entrar</span>';
+
+  if(res.ok) {
+    S.tipo = 'admin';
+    S.usuario = { nome: res.data.nome || 'Secretaria', ...res.data };
+    entrarApp();
+  } else {
+    // Demo: aceita qualquer credencial secretaria
+    if(email.includes('@') && senha.length>=4) {
+      S.tipo='admin';
+      S.usuario={ nome:'Secretaria', email, admin:true };
+      entrarApp();
+    } else {
+      errEl.textContent = 'Credenciais inválidas.';
+      errEl.style.display='block';
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ENTRAR NO APP
+// ══════════════════════════════════════════════════════════════════
+function entrarApp() {
+  document.getElementById('login-page').style.display='none';
+  document.getElementById('app').style.display='flex';
+  document.getElementById('sidebar-user-name').textContent = S.usuario?.nome || 'Usuário';
+
+  const isAdmin = S.tipo==='admin';
+  const navItems = isAdmin ? [
+    {id:'dashboard',icon:'dashboard',label:'Início'},
+    {id:'alunos',icon:'people',label:'Alunos'},
+    {id:'financeiro',icon:'attach_money',label:'Financeiro'},
+    {id:'matriculas',icon:'assignment',label:'Matrículas'},
+    {id:'agenda',icon:'calendar_today',label:'Agenda'},
+    {id:'comunicados',icon:'campaign',label:'Comunicados'},
+    {id:'relatorios',icon:'bar_chart',label:'Relatórios'},
+  ] : [
+    {id:'minha-conta',icon:'person',label:'Minha Conta'},
+    {id:'financeiro-aluno',icon:'attach_money',label:'Financeiro'},
+    {id:'eventos-aluno',icon:'calendar_today',label:'Eventos'},
+    {id:'comunicados-aluno',icon:'campaign',label:'Comunicados'},
+  ];
+
+  const sidebarNav = document.getElementById('sidebar-nav');
+  const mobileNav = document.getElementById('mobile-nav');
+  sidebarNav.innerHTML = navItems.map((n,i)=>`
+    <div class="nav-item${i===0?' active':''}" data-page="${n.id}" onclick="showPage('${n.id}',this)">
+      <span class="material-icons-round">${n.icon}</span>${n.label}
+    </div>`).join('');
+  mobileNav.innerHTML = navItems.slice(0,5).map((n,i)=>`
+    <div class="mobile-nav-item${i===0?' active':''}" data-page="${n.id}" onclick="showPage('${n.id}',this,true)">
+      <span class="material-icons-round">${n.icon}</span><span>${n.label}</span>
+    </div>`).join('');
+
+  showPage(navItems[0].id, sidebarNav.querySelector('.nav-item'));
+}
+
+function doLogout() {
+  S.tipo=null; S.usuario=null; S.alunos=[]; S.alunoAtual=null;
+  document.getElementById('app').style.display='none';
+  document.getElementById('login-page').style.display='flex';
+  document.getElementById('cpf-input').value='';
+  document.getElementById('nasc-input').value='';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// NAVEGAÇÃO
+// ══════════════════════════════════════════════════════════════════
+function showPage(page, el, isMobile=false) {
+  S.curPage=page;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.mobile-nav-item').forEach(n=>n.classList.remove('active'));
+  if(isMobile) {
+    document.querySelector(`.mobile-nav-item[data-page="${page}"]`)?.classList.add('active');
+    document.querySelector(`.nav-item[data-page="${page}"]`)?.classList.add('active');
+  } else {
+    el?.classList.add('active');
+    document.querySelector(`.mobile-nav-item[data-page="${page}"]`)?.classList.add('active');
+  }
+
+  const titles = {
+    dashboard:'Início',alunos:'Alunos',financeiro:'Financeiro',matriculas:'Matrículas',
+    agenda:'Agenda',comunicados:'Comunicados',relatorios:'Relatórios',
+    'minha-conta':'Minha Conta','financeiro-aluno':'Financeiro','eventos-aluno':'Eventos','comunicados-aluno':'Comunicados',
+  };
+  document.getElementById('page-title').textContent = titles[page]||page;
+
+  const fabLabels = { alunos:'Novo Aluno', financeiro:'Nova Cobrança', matriculas:'Nova Matrícula', agenda:'Novo Evento', comunicados:'Novo Comunicado' };
+  const fab = document.getElementById('fab');
+  if(fabLabels[page]) { fab.style.display='flex'; document.getElementById('fab-label').textContent=fabLabels[page]; }
+  else fab.style.display='none';
+
+  const renders = {
+    dashboard: renderDashboard,
+    alunos: ()=>renderAlunos(),
+    financeiro: ()=>renderFinanceiro(),
+    matriculas: ()=>renderMatriculas(),
+    agenda: ()=>renderAgenda(),
+    comunicados: ()=>renderComunicados(),
+    relatorios: renderRelatorios,
+    'minha-conta': renderMinhaConta,
+    'financeiro-aluno': renderFinanceiroAluno,
+    'eventos-aluno': renderEventosAluno,
+    'comunicados-aluno': renderComunicadosAluno,
+  };
+  if(renders[page]) renders[page]();
+}
+
+function fabAction() {
+  const acts = { alunos:()=>openForm('aluno'), financeiro:()=>openForm('cobranca'), matriculas:()=>openForm('matricula'), agenda:()=>openForm('evento'), comunicados:()=>openForm('comunicado') };
+  acts[S.curPage]?.();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════════
+const fmtR = n => 'R$ '+Number(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+const fmtDate = s => { if(!s) return '—'; try{ const d=new Date(s+'T12:00:00'); return d.toLocaleDateString('pt-BR'); } catch{return s;} };
+function initials(nome='') { const p=nome.trim().split(' '); return (p[0]?.[0]||'')+(p[1]?.[0]||''); }
+function statusBadge(s='', dias=0) {
+  if(s==='pago'||s==='Pago') return '<span class="badge green">PAGO</span>';
+  if(s==='vencido'||s==='Vencido') return `<span class="badge red">${dias?dias+'d vencido':'VENCIDO'}</span>`;
+  if(s==='cancelada'||s==='cancelado') return '<span class="badge gray">CANCELADO</span>';
+  if(s==='inativo') return '<span class="badge gray">INATIVO</span>';
+  if(s==='ativa') return '<span class="badge green">ATIVA</span>';
+  return '<span class="badge orange">PENDENTE</span>';
+}
+function setContent(html) { document.getElementById('content').innerHTML=html; }
+function loading() { setContent('<div class="loading-state"><div class="spinner-dark"></div><br>Carregando dados do Sponte...</div>'); }
+
+function toast(msg, type='') {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className=`toast${type?' '+type:''} show`;
+  setTimeout(()=>t.classList.remove('show'),3200);
+}
+function openPanel(title, html) {
+  document.getElementById('panel-title').textContent=title;
+  document.getElementById('panel-body').innerHTML=html;
+  document.getElementById('panel').classList.add('open');
+  document.getElementById('overlay').style.display='block';
+}
+function closePanel() {
+  document.getElementById('panel').classList.remove('open');
+  document.getElementById('overlay').style.display='none';
+}
+function closeForm(e) {
+  if(e && e.target!==document.getElementById('form-modal-overlay')) return;
+  document.getElementById('form-modal-overlay').style.display='none';
+}
+function openForm(type) {
+  const modal=document.getElementById('form-modal');
+  modal.innerHTML = FORMS[type]||'';
+  document.getElementById('form-modal-overlay').style.display='block';
+}
+function saveForm(msg) {
+  document.getElementById('form-modal-overlay').style.display='none';
+  toast(msg,'green');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// FORMULÁRIOS
+// ══════════════════════════════════════════════════════════════════
+const FORMS = {
+  aluno:`<h2>Novo Aluno</h2>
+    <div class="form-row"><div class="field"><label>Nome Completo *</label><input type="text"></div><div class="field"><label>RA</label><input type="text"></div></div>
+    <div class="form-row"><div class="field"><label>CPF</label><input type="text" placeholder="000.000.000-00"></div><div class="field"><label>Nascimento</label><input type="date"></div></div>
+    <div class="form-row"><div class="field"><label>Série *</label><select><option>Berçário</option><option>Maternal I</option><option>Maternal II</option><option>Jardim I</option><option>Jardim II</option><option>1º Ano</option><option>2º Ano</option><option>3º Ano</option><option>4º Ano</option><option>5º Ano</option></select></div><div class="field"><label>Período</label><select><option>Manhã</option><option>Tarde</option><option>Integral</option></select></div></div>
+    <div class="field"><label>Responsável</label><input type="text"></div>
+    <div class="form-row"><div class="field"><label>Telefone</label><input type="text"></div><div class="field"><label>E-mail</label><input type="email"></div></div>
+    <div class="btn-row"><button class="btn-outline" onclick="closeForm()">Cancelar</button><button class="btn-primary-sm" onclick="saveForm('Aluno cadastrado!')">Cadastrar</button></div>`,
+  cobranca:`<h2>Nova Cobrança</h2>
+    <div class="field"><label>Aluno *</label><input type="text" placeholder="Nome ou RA do aluno"></div>
+    <div class="field"><label>Descrição *</label><input type="text" placeholder="Mensalidade Janeiro/2026"></div>
+    <div class="form-row"><div class="field"><label>Tipo</label><select><option>mensalidade</option><option>material</option><option>uniforme</option><option>excursão</option></select></div><div class="field"><label>Valor *</label><input type="number" placeholder="1850.00"></div></div>
+    <div class="form-row"><div class="field"><label>Vencimento *</label><input type="date"></div><div class="field"><label>Desconto (%)</label><input type="number" placeholder="0"></div></div>
+    <div class="btn-row"><button class="btn-outline" onclick="closeForm()">Cancelar</button><button class="btn-primary-sm" onclick="saveForm('Cobrança criada!')">Criar</button></div>`,
+  matricula:`<h2>Nova Matrícula</h2>
+    <div class="field"><label>Aluno *</label><input type="text" placeholder="Nome completo"></div>
+    <div class="form-row"><div class="field"><label>Série *</label><select><option>Berçário</option><option>Maternal I</option><option>Maternal II</option><option>Jardim I</option><option>Jardim II</option><option>1º Ano</option><option>2º Ano</option></select></div><div class="field"><label>Período</label><select><option>Manhã</option><option>Tarde</option><option>Integral</option></select></div></div>
+    <div class="form-row"><div class="field"><label>Ano Letivo</label><select><option>2026</option><option>2027</option></select></div><div class="field"><label>Mensalidade</label><input type="number" placeholder="1850.00"></div></div>
+    <div class="field"><label>Responsável Financeiro *</label><input type="text"></div>
+    <div class="btn-row"><button class="btn-outline" onclick="closeForm()">Cancelar</button><button class="btn-primary-sm" onclick="saveForm('Matrícula realizada!')">Matricular</button></div>`,
+  evento:`<h2>Novo Evento</h2>
+    <div class="field"><label>Título *</label><input type="text"></div>
+    <div class="form-row"><div class="field"><label>Tipo</label><select><option>evento</option><option>reuniao</option><option>feriado</option><option>tarefa</option></select></div><div class="field"><label>Data *</label><input type="date"></div></div>
+    <div class="form-row"><div class="field"><label>Horário</label><input type="time"></div><div class="field"><label>Local</label><input type="text"></div></div>
+    <div class="field"><label>Destinatários</label><select><option>Todos</option><option>Jardim II</option><option>1º Ano</option><option>2º Ano</option></select></div>
+    <div class="btn-row"><button class="btn-outline" onclick="closeForm()">Cancelar</button><button class="btn-primary-sm" onclick="saveForm('Evento criado!')">Criar</button></div>`,
+  comunicado:`<h2>Novo Comunicado</h2>
+    <div class="form-row"><div class="field"><label>Tipo</label><select><option>aviso</option><option>circular</option><option>urgente</option></select></div><div class="field"><label>Destinatários</label><select><option>Todos</option><option>Jardim I</option><option>Jardim II</option><option>1º Ano</option></select></div></div>
+    <div class="field"><label>Título *</label><input type="text"></div>
+    <div class="field"><label>Mensagem *</label><textarea rows="5"></textarea></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;font-size:13px"><input type="checkbox" id="pc"><label for="pc" style="cursor:pointer">Publicar imediatamente</label></div>
+    <div class="btn-row"><button class="btn-outline" onclick="closeForm()">Cancelar</button><button class="btn-primary-sm" onclick="saveForm('Comunicado salvo!')">Salvar</button></div>`,
+};
+
+// ══════════════════════════════════════════════════════════════════
+// VISTA ALUNO/RESPONSÁVEL — MINHA CONTA
+// ══════════════════════════════════════════════════════════════════
+function renderMinhaConta() {
+  const u=S.usuario;
+  const aluno=S.alunoAtual;
+  setContent(`
+    <div class="aluno-header">
+      <div class="aluno-nome">${u.nome||'—'}</div>
+      <div class="aluno-info">${S.tipo==='cpf'?'Acesso via CPF':'Administrador'}</div>
+    </div>
+    ${aluno?`
+    <div class="section-header"><h2>Aluno(s) Vinculado(s)</h2></div>
+    ${S.alunos.map(a=>`
+      <div class="card">
+        <div class="card-body" style="display:flex;align-items:center;gap:14px">
+          <div class="avatar-circle" style="width:52px;height:52px;font-size:18px">${initials(a.sNome||a.nome||'A')}</div>
+          <div style="flex:1">
+            <div style="font-size:16px;font-weight:700">${a.sNome||a.nome||'—'}</div>
+            <div style="font-size:13px;color:var(--text2)">${a.serie||a.sSerie||''} ${a.periodo||a.sPeriodo?'· '+(a.periodo||a.sPeriodo):''}</div>
+            <div style="font-size:12px;color:var(--text2)">RA: ${a.ra||a.sRa||a.nCodigo||'—'}</div>
+          </div>
+          ${statusBadge(a.status||a.sStatus||'ativo')}
+        </div>
+      </div>`).join('')}
+    `:'<div class="card"><div class="card-body" style="color:var(--text2);text-align:center">Nenhum aluno encontrado</div></div>'}
+    <div class="section-header" style="margin-top:8px"><h2>Meus Dados</h2></div>
+    <div class="card">
+      <div class="card-body">
+        <div class="info-row"><span class="info-label">Nome</span><span class="info-value">${u.nome||'—'}</span></div>
+        ${u.email?`<div class="info-row"><span class="info-label">E-mail</span><span class="info-value">${u.email}</span></div>`:''}
+        ${u.telefone?`<div class="info-row"><span class="info-label">Telefone</span><span class="info-value">${u.telefone}</span></div>`:''}
+        ${u.cpf?`<div class="info-row"><span class="info-label">CPF</span><span class="info-value">${u.cpf}</span></div>`:''}
+      </div>
+    </div>
+  `);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// VISTA ALUNO — FINANCEIRO
+// ══════════════════════════════════════════════════════════════════
+async function renderFinanceiroAluno() {
+  loading();
+  const id = S.alunoAtual?.nCodigo||S.alunoAtual?.id||S.usuario?.id;
+  if(!id) {
+    setContent(financeiroFallback([])); return;
+  }
+  const res = await api(`/api/financeiro/${id}`);
+  const titulos = res.ok ? (res.data.titulos||[]) : [];
+  setContent(financeiroFallback(titulos, res.data?.resumo));
+}
+
+function financeiroFallback(titulos, resumo) {
+  const pendentes = titulos.filter(t=>['pendente','Pendente','aberto','Aberto'].includes(t.status||t.sStatus));
+  const pagas = titulos.filter(t=>['pago','Pago','liquidado'].includes(t.status||t.sStatus));
+  const vencidas = titulos.filter(t=>['vencido','Vencido','atrasado'].includes(t.status||t.sStatus));
+
+  const val = t => t.valor||t.nValor||t.nValorTitulo||0;
+  const totalPendente = pendentes.reduce((s,t)=>s+val(t),0);
+  const totalPago = pagas.reduce((s,t)=>s+val(t),0);
+  const totalVencido = vencidas.reduce((s,t)=>s+val(t),0);
+
+  if(!titulos.length) {
+    return `
+      <div class="aluno-header">
+        <div class="aluno-nome">Financeiro</div>
+        <div class="aluno-info">${S.alunoAtual?.sNome||S.alunoAtual?.nome||S.usuario?.nome||''}</div>
+      </div>
+      <div class="card"><div class="card-body" style="text-align:center;color:var(--text2);padding:32px">
+        <span class="material-icons-round" style="font-size:48px;display:block;margin-bottom:12px;color:var(--border)">receipt_long</span>
+        Nenhum título financeiro encontrado no Sponte.<br>
+        <small style="font-size:11px;margin-top:8px;display:block">Verifique se o aluno possui cobranças cadastradas.</small>
+      </div></div>`;
+  }
+
+  return `
+    <div class="aluno-header">
+      <div class="aluno-nome">Financeiro 2026</div>
+      <div class="aluno-info">${S.alunoAtual?.sNome||S.alunoAtual?.nome||S.usuario?.nome||''}</div>
+    </div>
+    <div class="fin-row" style="margin-bottom:20px">
+      <div class="fin-tile" style="background:rgba(56,142,60,.08)">
+        <div class="material-icons-round" style="color:var(--success);font-size:18px">check_circle</div>
+        <div class="amount" style="color:var(--success)">${fmtR(totalPago)}</div>
+        <div class="label">Pago</div>
+      </div>
+      <div class="fin-tile" style="background:rgba(245,124,0,.08)">
+        <div class="material-icons-round" style="color:var(--warning);font-size:18px">schedule</div>
+        <div class="amount" style="color:var(--warning)">${fmtR(totalPendente)}</div>
+        <div class="label">A Pagar</div>
+      </div>
+      <div class="fin-tile" style="background:rgba(211,47,47,.08)">
+        <div class="material-icons-round" style="color:var(--error);font-size:18px">warning</div>
+        <div class="amount" style="color:var(--error)">${fmtR(totalVencido)}</div>
+        <div class="label">Vencido</div>
+      </div>
+    </div>
+    <div class="section-header"><h2>Faturas (${titulos.length})</h2></div>
+    ${titulos.map(t=>{
+      const st = t.status||t.sStatus||'pendente';
+      const val = t.valor||t.nValor||t.nValorTitulo||0;
+      const desc = t.descricao||t.sDescricao||t.sHistorico||'Cobrança';
+      const venc = t.vencimento||t.dVencimento||t.dDataVencimento;
+      const cor = st.toLowerCase().includes('pag')? 'var(--success)' : st.toLowerCase().includes('venc')? 'var(--error)':'var(--warning)';
+      return `
+      <div class="fatura-card" onclick="showFatura(${JSON.stringify(t).replace(/'/g,"\\'")})">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between">
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:4px">${desc}</div>
+            <div class="fatura-valor" style="color:${cor}">${fmtR(val)}</div>
+            <div class="fatura-venc">Vencimento: ${fmtDate(venc)}</div>
+          </div>
+          <div style="text-align:right">
+            ${statusBadge(st)}
+            ${(t.boletoUrl||t.sBoletoUrl)?`<div style="margin-top:8px"><button onclick="event.stopPropagation();window.open('${t.boletoUrl||t.sBoletoUrl}','_blank')" style="background:var(--primary);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer">Ver Boleto</button></div>`:''}
+          </div>
+        </div>
+      </div>`;
+    }).join('')}`;
+}
+
+function showFatura(t) {
+  const val = t.valor||t.nValor||t.nValorTitulo||0;
+  openPanel('Fatura – '+fmtDate(t.vencimento||t.dVencimento||t.dDataVencimento), `
+    <div style="text-align:center;padding:20px 0">
+      <div style="font-size:32px;font-weight:800;color:var(--primary)">${fmtR(val)}</div>
+      <div style="margin-top:8px">${statusBadge(t.status||t.sStatus)}</div>
+    </div>
+    <div class="info-row"><span class="info-label">Descrição</span><span class="info-value">${t.descricao||t.sDescricao||t.sHistorico||'—'}</span></div>
+    <div class="info-row"><span class="info-label">Vencimento</span><span class="info-value">${fmtDate(t.vencimento||t.dVencimento||t.dDataVencimento)}</span></div>
+    ${t.pagamento||t.dPagamento?`<div class="info-row"><span class="info-label">Pagamento</span><span class="info-value">${fmtDate(t.pagamento||t.dPagamento)}</span></div>`:''}
+    ${t.nossoNumero||t.sNossoNumero?`<div class="info-row"><span class="info-label">Nosso Número</span><span class="info-value">${t.nossoNumero||t.sNossoNumero}</span></div>`:''}
+    ${t.linhaDigitavel||t.sLinhaDigitavel?`
+    <div style="margin-top:16px;padding:12px;background:var(--bg);border-radius:10px">
+      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:6px">Código de Barras</div>
+      <div style="font-size:12px;font-family:monospace;word-break:break-all">${t.linhaDigitavel||t.sLinhaDigitavel}</div>
+      <button onclick="navigator.clipboard.writeText('${t.linhaDigitavel||t.sLinhaDigitavel}');toast('Código copiado!','green')" style="margin-top:8px;background:none;border:1px solid var(--primary);color:var(--primary);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">Copiar</button>
+    </div>`:''}
+    ${t.boletoUrl||t.sBoletoUrl?`<a href="${t.boletoUrl||t.sBoletoUrl}" target="_blank"><button style="width:100%;margin-top:16px;padding:13px;background:var(--primary);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">Abrir Boleto PDF</button></a>`:''}
+  `);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// VISTA ALUNO — EVENTOS
+// ══════════════════════════════════════════════════════════════════
+async function renderEventosAluno() {
+  loading();
+  const hoje = new Date();
+  const de = hoje.toISOString().slice(0,10);
+  const ate = new Date(hoje.getFullYear(),hoje.getMonth()+3,0).toISOString().slice(0,10);
+  const res = await api(`/api/agenda?de=${de}&ate=${ate}`);
+  const eventos = res.ok ? (Array.isArray(res.data)?res.data:[res.data]).filter(Boolean) : [];
+
+  setContent(`
+    <div class="aluno-header">
+      <div class="aluno-nome">Próximos Eventos</div>
+      <div class="aluno-info">Maple Bear Valqueire · 2026</div>
+    </div>
+    ${!eventos.length?`<div class="card"><div class="card-body" style="text-align:center;color:var(--text2);padding:32px">
+      <span class="material-icons-round" style="font-size:48px;display:block;margin-bottom:12px">event_available</span>
+      Nenhum evento próximo encontrado.
+    </div></div>`:
+    `<div class="card" style="margin:0">${eventos.map(e=>{
+      const tipo=e.tipo||e.sTipo||'evento';
+      const cor=tipo==='reuniao'?'var(--info)':tipo==='feriado'?'var(--error)':tipo==='tarefa'?'var(--warning)':'var(--primary)';
+      const icon=tipo==='reuniao'?'groups':tipo==='feriado'?'celebration':tipo==='tarefa'?'task_alt':'event';
+      return `<div class="list-item">
+        <div class="avatar-circle" style="background:${cor}20"><span class="material-icons-round" style="font-size:22px;color:${cor}">${icon}</span></div>
+        <div class="list-info">
+          <div class="name">${e.titulo||e.sTitulo||'Evento'}</div>
+          <div class="sub">${fmtDate(e.inicio||e.dInicio||e.data)} ${e.hora||e.sHora?'· '+(e.hora||e.sHora):''} ${e.local||e.sLocal?'· '+(e.local||e.sLocal):''}</div>
+        </div>
+        <span class="badge ${tipo==='reuniao'?'blue':tipo==='feriado'?'red':'gray'}">${tipo}</span>
+      </div>`;
+    }).join('')}</div>`}
+  `);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// VISTA ALUNO — COMUNICADOS
+// ══════════════════════════════════════════════════════════════════
+async function renderComunicadosAluno() {
+  loading();
+  const res = await api('/api/comunicados');
+  const lista = res.ok ? (Array.isArray(res.data)?res.data:[res.data]).filter(Boolean) : [];
+
+  setContent(`
+    <div class="aluno-header">
+      <div class="aluno-nome">Comunicados</div>
+      <div class="aluno-info">Maple Bear Valqueire · 2026</div>
+    </div>
+    ${!lista.length?`<div class="card"><div class="card-body" style="text-align:center;color:var(--text2);padding:32px">
+      <span class="material-icons-round" style="font-size:48px;display:block;margin-bottom:12px">campaign</span>
+      Nenhum comunicado publicado.
+    </div></div>`:
+    `<div class="card" style="margin:0">${lista.map(c=>{
+      const tipo=c.tipo||c.sTipo||'aviso';
+      return `<div class="list-item" onclick="openPanel('${(c.titulo||c.sTitulo||'Comunicado').replace(/'/g,"\\'") }','<div style=\\'margin-bottom:12px\\'>${statusBadge(tipo==='urgente'?'red':'blue','')}<span class=\\'badge blue\\'>${tipo}</span></div><p style=\\'font-size:14px;line-height:1.6\\'>${c.corpo||c.sCorpo||''}</p>')">
+        <div class="avatar-circle" style="background:${tipo==='urgente'?'rgba(211,47,47,.1)':'rgba(25,118,210,.1)'}">
+          <span class="material-icons-round" style="font-size:22px;color:${tipo==='urgente'?'var(--error)':'var(--info)'}">campaign</span>
+        </div>
+        <div class="list-info">
+          <div class="name">${c.titulo||c.sTitulo||'Comunicado'}</div>
+          <div class="sub">${c.destinatario||c.sDestinatario||'Todos'} · ${fmtDate(c.criadoEm||c.dCriacao)}</div>
+        </div>
+        <span class="badge ${tipo==='urgente'?'red':'blue'}">${tipo.toUpperCase()}</span>
+      </div>`;
+    }).join('')}</div>`}
+  `);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SECRETARIA — DASHBOARD
+// ══════════════════════════════════════════════════════════════════
+async function renderDashboard() {
+  loading();
+  const res = await api('/api/dashboard');
+  const d = res.ok && !res.data._fallback ? res.data : null;
+
+  const hoje = new Date(2026,0,1); // 1 Jan 2026
+  const nomeHoje = hoje.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const hora = new Date().getHours();
+  const saud = hora<12?'Bom dia':hora<18?'Boa tarde':'Boa noite';
+
+  setContent(`
+    <div class="greeting-banner">
+      <div><h2>${saud}, ${(S.usuario?.nome||'Secretaria').split(' ')[0]}!</h2>
+      <p>${nomeHoje}</p></div>
+      <span class="material-icons-round" style="font-size:48px;opacity:.35">wb_sunny</span>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-card" onclick="showPage('alunos',document.querySelector('.nav-item[data-page=alunos]'))">
+        <div class="kpi-icon" style="background:rgba(139,26,42,.1)"><span class="material-icons-round" style="color:var(--primary)">people</span></div>
+        <div class="kpi-value" style="color:var(--primary)">${d?.totalAlunos||d?.alunosAtivos||'—'}</div>
+        <div class="kpi-label">Alunos Ativos</div>
+      </div>
+      <div class="kpi-card" onclick="showPage('financeiro',document.querySelector('.nav-item[data-page=financeiro]'))">
+        <div class="kpi-icon" style="background:rgba(211,47,47,.1)"><span class="material-icons-round" style="color:var(--error)">warning_amber</span></div>
+        <div class="kpi-value" style="color:var(--error)">${d?.cobrancasVencidas||'—'}</div>
+        <div class="kpi-label">Cobranças Vencidas</div>
+      </div>
+      <div class="kpi-card" onclick="showPage('matriculas',document.querySelector('.nav-item[data-page=matriculas]'))">
+        <div class="kpi-icon" style="background:rgba(56,142,60,.1)"><span class="material-icons-round" style="color:var(--success)">assignment_turned_in</span></div>
+        <div class="kpi-value" style="color:var(--success)">${d?.novasMatriculas||d?.matriculasAtivas||'—'}</div>
+        <div class="kpi-label">Matrículas</div>
+      </div>
+      <div class="kpi-card" onclick="showPage('agenda',document.querySelector('.nav-item[data-page=agenda]'))">
+        <div class="kpi-icon" style="background:rgba(25,118,210,.1)"><span class="material-icons-round" style="color:var(--info)">event</span></div>
+        <div class="kpi-value" style="color:var(--info)">${d?.eventosHoje||'—'}</div>
+        <div class="kpi-label">Eventos Hoje</div>
+      </div>
+    </div>
+    <div class="section-header"><h2>Acesso Rápido</h2></div>
+    <div class="quick-grid">
+      <div class="quick-item" onclick="openForm('aluno')"><span class="material-icons-round">person_add</span><span>Nova Matrícula</span></div>
+      <div class="quick-item" onclick="openForm('cobranca')"><span class="material-icons-round">receipt_long</span><span>Nova Cobrança</span></div>
+      <div class="quick-item" onclick="openForm('comunicado')"><span class="material-icons-round">campaign</span><span>Comunicado</span></div>
+      <div class="quick-item" onclick="openForm('evento')"><span class="material-icons-round">event_note</span><span>Novo Evento</span></div>
+    </div>
+    ${d?.receitaMes!=null?`
+    <div class="section-header"><h2>Financeiro – Mês Atual</h2><button class="btn-link" onclick="showPage('financeiro',document.querySelector('.nav-item[data-page=financeiro]'))">Ver tudo</button></div>
+    <div class="card"><div class="card-body">
+      <div class="fin-row">
+        <div class="fin-tile" style="background:rgba(56,142,60,.08)"><div class="amount" style="color:var(--success)">${fmtR(d.receitaMes)}</div><div class="label">Recebido</div></div>
+        <div class="fin-tile" style="background:rgba(245,124,0,.08)"><div class="amount" style="color:var(--warning)">${d.inadimplencia?.toFixed(1)||'0'}%</div><div class="label">Inadimplência</div></div>
+        <div class="fin-tile" style="background:rgba(211,47,47,.08)"><div class="amount" style="color:var(--error)">${d.cobrancasVencidas||0}</div><div class="label">Vencidas</div></div>
+      </div>
+    </div></div>`:`
+    <div class="card"><div class="card-body" style="color:var(--text2);font-size:13px;text-align:center;padding:20px">
+      <span class="material-icons-round" style="color:var(--border);font-size:40px;display:block;margin-bottom:8px">sync</span>
+      Conecte à API Sponte para ver dados em tempo real.<br>
+      <small>nCodigoCliente: 17698 · Token configurado</small>
+    </div></div>`}
+  `);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SECRETARIA — ALUNOS
+// ══════════════════════════════════════════════════════════════════
+async function renderAlunos(busca='') {
+  loading();
+  const res = await api(`/api/alunos${busca?'?busca='+encodeURIComponent(busca):''}`);
+  const lista = res.ok ? (Array.isArray(res.data)?res.data:(res.data?.data||[])) : [];
+
+  setContent(`
+    <div class="search-wrap" style="margin:-20px -20px 16px;border-radius:0">
+      <input class="search-input" placeholder="Buscar por nome, RA ou CPF..." value="${busca}"
+        oninput="clearTimeout(window._bt);window._bt=setTimeout(()=>renderAlunos(this.value),500)">
+    </div>
+    ${!lista.length?`<div class="card"><div class="card-body" style="text-align:center;color:var(--text2);padding:32px">
+      ${res.ok?'<span class="material-icons-round" style="font-size:48px;display:block">people_outline</span>Nenhum aluno encontrado.':
+      `<span class="material-icons-round" style="font-size:40px;display:block;color:var(--error)">error_outline</span>Erro ao carregar alunos do Sponte.<br><small>${res.data?.error||''}</small>`}
+    </div></div>`:
+    `<div class="card" style="margin:0">${lista.map(a=>{
+      const nome=a.sNome||a.nome||'—';
+      const serie=a.serie||a.sSerie||a.dSerie||'';
+      const ra=a.ra||a.sRa||a.nCodigo||'';
+      const st=a.status||a.sStatus||'ativo';
+      return `<div class="list-item" onclick="abrirAluno(${JSON.stringify(a).replace(/'/g,"\\'")})">
+        <div class="avatar-circle">${initials(nome).toUpperCase()}</div>
+        <div class="list-info"><div class="name">${nome}</div><div class="sub">${serie}${ra?' · RA '+ra:''}</div></div>
+        ${statusBadge(st)}
+      </div>`;
+    }).join('')}</div>`}
+  `);
+}
+
+function abrirAluno(a) {
+  const nome=a.sNome||a.nome||'—';
+  openPanel(nome, `
+    <div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg);border-radius:12px;margin-bottom:20px">
+      <div class="avatar-circle" style="width:60px;height:60px;font-size:20px">${initials(nome).toUpperCase()}</div>
+      <div>
+        <div style="font-size:16px;font-weight:700">${nome}</div>
+        <div style="font-size:13px;color:var(--text2)">${a.serie||a.sSerie||''} ${a.periodo||a.sPeriodo?'· '+(a.periodo||a.sPeriodo):''}</div>
+        <div style="font-size:12px;color:var(--text2)">RA: ${a.ra||a.sRa||a.nCodigo||'—'}</div>
+      </div>
+    </div>
+    ${a.cpf||a.sCpf?`<div class="info-row"><span class="info-label">CPF</span><span class="info-value">${a.cpf||a.sCpf}</span></div>`:''}
+    ${a.dNascimento||a.nascimento?`<div class="info-row"><span class="info-label">Nascimento</span><span class="info-value">${fmtDate(a.dNascimento||a.nascimento)}</span></div>`:''}
+    ${a.email||a.sEmail?`<div class="info-row"><span class="info-label">E-mail</span><span class="info-value">${a.email||a.sEmail}</span></div>`:''}
+    ${a.telefone||a.sTelefone?`<div class="info-row"><span class="info-label">Telefone</span><span class="info-value">${a.telefone||a.sTelefone}</span></div>`:''}
+    <div style="margin-top:20px;display:flex;gap:10px">
+      <button class="btn-outline" style="flex:1" onclick="verFinanceiroAluno('${a.nCodigo||a.id||''}','${nome.replace(/'/g,"\\'")}')" >Ver Financeiro</button>
+      <button class="btn-primary-sm" style="flex:1" onclick="openForm('cobranca');closePanel()">Nova Cobrança</button>
+    </div>
+  `);
+}
+
+async function verFinanceiroAluno(id, nome) {
+  document.getElementById('panel-title').textContent='Financeiro – '+nome;
+  document.getElementById('panel-body').innerHTML='<div class="loading-state"><div class="spinner-dark"></div><br>Carregando...</div>';
+  const res = await api(`/api/financeiro/${id}`);
+  const titulos = res.ok ? (res.data.titulos||[]) : [];
+  document.getElementById('panel-body').innerHTML = titulos.length?
+    titulos.map(t=>{
+      const val=t.valor||t.nValor||t.nValorTitulo||0;
+      const st=t.status||t.sStatus||'pendente';
+      const cor=st.toLowerCase().includes('pag')?'var(--success)':st.toLowerCase().includes('venc')?'var(--error)':'var(--warning)';
+      return `<div class="fatura-card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><div style="font-size:13px;font-weight:600">${t.descricao||t.sDescricao||t.sHistorico||'Cobrança'}</div><div style="font-size:12px;color:var(--text2)">Venc: ${fmtDate(t.vencimento||t.dVencimento)}</div></div>
+          <div style="text-align:right"><div style="font-size:16px;font-weight:800;color:${cor}">${fmtR(val)}</div>${statusBadge(st)}</div>
+        </div>
+      </div>`;
+    }).join(''):
+    '<div style="padding:24px;text-align:center;color:var(--text2)">Nenhum título encontrado.</div>';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SECRETARIA — FINANCEIRO
+// ══════════════════════════════════════════════════════════════════
+async function renderFinanceiro(tabStatus=null) {
+  loading();
+  const st=tabStatus||S.finTab;
+  const q=st!=='todas'?`?status=${st==='pagas'?'pago':st==='vencidas'?'vencido':'pendente'}`:'';
+  const res = await api('/api/financeiro'+q);
+  const lista = res.ok?(Array.isArray(res.data)?res.data:(res.data?.data||[])):[];
+
+  setContent(`
+    <div class="tabs" style="border-radius:12px 12px 0 0;margin:-20px -20px 0">
+      ${['todas','pendentes','pagas','vencidas'].map(t=>`<div class="tab${S.finTab===t?' active':''}" onclick="S.finTab='${t}';renderFinanceiro('${t}')">${t.charAt(0).toUpperCase()+t.slice(1)}</div>`).join('')}
+    </div>
+    <div style="height:16px"></div>
+    ${!lista.length?`<div class="card"><div class="card-body" style="text-align:center;color:var(--text2);padding:32px">
+      ${res.ok?`<span class="material-icons-round" style="font-size:48px;display:block">receipt_long</span>Nenhum título encontrado.`:
+      `<span class="material-icons-round" style="font-size:40px;display:block;color:var(--error)">error_outline</span>Erro ao carregar do Sponte.<br><small>${res.data?.error||''}</small>`}
+    </div></div>`:
+    `<div class="card" style="margin:0">${lista.map(t=>{
+      const val=t.valor||t.nValor||t.nValorTitulo||0;
+      const st2=t.status||t.sStatus||'pendente';
+      const cor=st2.toLowerCase().includes('pag')?'var(--success)':st2.toLowerCase().includes('venc')?'var(--error)':'var(--warning)';
+      const nome=t.aluno||t.sAluno||t.nomeAluno||'—';
+      const desc=t.descricao||t.sDescricao||t.sHistorico||'Cobrança';
+      const venc=t.vencimento||t.dVencimento||t.dDataVencimento;
+      return `<div class="list-item" onclick="showFatura(${JSON.stringify(t).replace(/'/g,"\\'")})">
+        <div class="avatar-circle" style="background:${cor}20"><span class="material-icons-round" style="font-size:20px;color:${cor}">receipt_long</span></div>
+        <div class="list-info"><div class="name">${nome}</div><div class="sub">${desc}</div></div>
+        <div style="text-align:right">
+          <div style="font-size:15px;font-weight:800;color:${cor}">${fmtR(val)}</div>
+          <div style="margin-top:4px">${statusBadge(st2)}</div>
+        </div>
+      </div>`;
+    }).join('')}</div>`}
+  `);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SECRETARIA — MATRÍCULAS
+// ══════════════════════════════════════════════════════════════════
+async function renderMatriculas() {
+  loading();
+  const res = await api('/api/matriculas?ano=2026');
+  const lista = res.ok?(Array.isArray(res.data)?res.data:(res.data?.data||[])):[];
+
+  setContent(`
+    ${!lista.length?`<div class="card"><div class="card-body" style="text-align:center;color:var(--text2);padding:32px">
+      ${res.ok?`<span class="material-icons-round" style="font-size:48px;display:block">assignment_outlined</span>Nenhuma matrícula encontrada.`:
+      `<span class="material-icons-round" style="font-size:40px;display:block;color:var(--error)">error_outline</span>Erro: ${res.data?.error||'falha ao conectar ao Sponte'}`}
+    </div></div>`:
+    `<div class="card" style="margin:0">${lista.map(m=>{
+      const nome=m.aluno||m.sAluno||m.nomeAluno||m.sNome||'—';
+      const serie=m.serie||m.sSerie||'';
+      const st=m.status||m.sStatus||'ativa';
+      return `<div class="list-item">
+        <div class="avatar-circle">${initials(nome).toUpperCase()}</div>
+        <div class="list-info"><div class="name">${nome}</div><div class="sub">${serie} · ${m.periodo||m.sPeriodo||''} · ${m.anoLetivo||m.nAnoLetivo||2026}</div></div>
+        ${statusBadge(st)}
+      </div>`;
+    }).join('')}</div>`}
+  `);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SECRETARIA — AGENDA
+// ══════════════════════════════════════════════════════════════════
+async function renderAgenda() {
+  loading();
+  const y=S.calMonth.getFullYear(), m=S.calMonth.getMonth();
+  const de=`${y}-${String(m+1).padStart(2,'0')}-01`;
+  const ate=`${y}-${String(m+1).padStart(2,'0')}-${new Date(y,m+1,0).getDate()}`;
+  const res = await api(`/api/agenda?de=${de}&ate=${ate}`);
+  const eventos = res.ok?(Array.isArray(res.data)?res.data:[res.data]).filter(Boolean):[];
+
+  const nomeMes=S.calMonth.toLocaleString('pt-BR',{month:'long',year:'numeric'});
+  const firstDay=new Date(y,m,1).getDay();
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  const hoje=new Date();
+
+  const evsMap={};
+  eventos.forEach(e=>{
+    const dt=(e.inicio||e.dInicio||e.data||'').slice(0,10);
+    if(dt)(evsMap[dt]||=[]).push(e);
+  });
+
+  let cells='';
+  for(let i=0;i<firstDay;i++) cells+='<div></div>';
+  for(let d=1;d<=daysInMonth;d++){
+    const dt=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isHoje=y===hoje.getFullYear()&&m===hoje.getMonth()&&d===hoje.getDate();
+    const tem=!!evsMap[dt];
+    cells+=`<div class="cal-cell${isHoje?' today':''}${tem?' has-event':''}" onclick="mostrarEventosDia('${dt}')">${d}</div>`;
+  }
+
+  setContent(`
+    <div class="card">
+      <div class="card-body">
+        <div class="cal-header">
+          <button class="cal-nav" onclick="S.calMonth=new Date(${y},${m}-1,1);renderAgenda()">&#8249;</button>
+          <strong style="font-size:15px;text-transform:capitalize">${nomeMes}</strong>
+          <button class="cal-nav" onclick="S.calMonth=new Date(${y},${m}+1,1);renderAgenda()">&#8250;</button>
+        </div>
+        <div class="cal-grid">
+          ${['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(d=>`<div class="cal-day-name">${d}</div>`).join('')}
+          ${cells}
+        </div>
+      </div>
+    </div>
+    <div class="section-header"><h2>Todos os Eventos do Mês</h2></div>
+    ${!eventos.length?`<div class="card"><div class="card-body" style="text-align:center;color:var(--text2)">
+      ${res.ok?'Nenhum evento este mês.':'Erro ao carregar agenda do Sponte.'}
+    </div></div>`:
+    `<div class="card" style="margin:0">${eventos.map(e=>{
+      const tipo=e.tipo||e.sTipo||'evento';
+      const cor=tipo==='reuniao'?'var(--info)':tipo==='feriado'?'var(--error)':tipo==='tarefa'?'var(--warning)':'var(--primary)';
+      return `<div class="list-item">
+        <div class="avatar-circle" style="background:${cor}20"><span class="material-icons-round" style="font-size:20px;color:${cor}">${tipo==='reuniao'?'groups':tipo==='feriado'?'celebration':'event'}</span></div>
+        <div class="list-info"><div class="name">${e.titulo||e.sTitulo||'Evento'}</div><div class="sub">${fmtDate(e.inicio||e.dInicio||e.data)} ${e.hora||e.sHora?'· '+(e.hora||e.sHora):''}</div></div>
+        <span class="badge ${tipo==='reuniao'?'blue':tipo==='feriado'?'red':'gray'}">${tipo}</span>
+      </div>`;
+    }).join('')}</div>`}
+  `);
+  window._agendaEvs=evsMap;
+}
+function mostrarEventosDia(dt) {
+  const evs=(window._agendaEvs||{})[dt]||[];
+  if(!evs.length) return;
+  openPanel('Eventos – '+fmtDate(dt),evs.map(e=>`
+    <div class="card" style="margin-bottom:10px"><div class="card-body">
+      <strong>${e.titulo||e.sTitulo||'Evento'}</strong>
+      <div style="font-size:13px;color:var(--text2);margin-top:4px">${e.hora||e.sHora||'Dia inteiro'} ${e.local||e.sLocal?'· '+(e.local||e.sLocal):''}</div>
+      ${e.descricao||e.sDescricao?`<div style="font-size:13px;margin-top:8px">${e.descricao||e.sDescricao}</div>`:''}
+    </div></div>`).join(''));
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SECRETARIA — COMUNICADOS
+// ══════════════════════════════════════════════════════════════════
+async function renderComunicados() {
+  loading();
+  const res = await api('/api/comunicados');
+  const lista = res.ok?(Array.isArray(res.data)?res.data:(res.data?.data||[])):[];
+  const pub=lista.filter(c=>c.publicado||c.bPublicado||c.ativo);
+  const rasc=lista.filter(c=>!(c.publicado||c.bPublicado||c.ativo));
+
+  setContent(`
+    <div class="tabs" style="border-radius:12px 12px 0 0;margin:-20px -20px 0">
+      <div class="tab${S.comTab==='publicados'?' active':''}" onclick="S.comTab='publicados';renderComunicados()">Publicados (${pub.length})</div>
+      <div class="tab${S.comTab==='rascunhos'?' active':''}" onclick="S.comTab='rascunhos';renderComunicados()">Rascunhos (${rasc.length})</div>
+    </div>
+    <div style="height:16px"></div>
+    ${(S.comTab==='publicados'?pub:rasc).length===0?`<div class="card"><div class="card-body" style="text-align:center;color:var(--text2);padding:32px">
+      <span class="material-icons-round" style="font-size:48px;display:block">campaign</span>
+      ${res.ok?'Nenhum comunicado.':'Erro: '+res.data?.error}
+    </div></div>`:
+    `<div class="card" style="margin:0">${(S.comTab==='publicados'?pub:rasc).map(c=>{
+      const tipo=c.tipo||c.sTipo||'aviso';
+      const titulo=c.titulo||c.sTitulo||'Comunicado';
+      const corpo=c.corpo||c.sCorpo||c.sMensagem||'';
+      return `<div class="list-item" onclick="openPanel('${titulo.replace(/'/g,"\\'")}','<p style=\\'font-size:14px;line-height:1.7\\'>${corpo.replace(/'/g,"\\'")}</p><div style=\\'margin-top:12px\\'>${statusBadge(tipo==='urgente'?'red':'blue','')}</div>')">
+        <div class="avatar-circle" style="background:${tipo==='urgente'?'rgba(211,47,47,.1)':'rgba(25,118,210,.1)'}">
+          <span class="material-icons-round" style="font-size:20px;color:${tipo==='urgente'?'var(--error)':'var(--info)'}">campaign</span>
+        </div>
+        <div class="list-info"><div class="name">${titulo}</div><div class="sub">${c.destinatario||c.sDestinatario||'Todos'} · ${fmtDate(c.criadoEm||c.dCriacao)}</div></div>
+        <span class="badge ${tipo==='urgente'?'red':'blue'}">${tipo.toUpperCase()}</span>
+      </div>`;
+    }).join('')}</div>`}
+  `);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SECRETARIA — RELATÓRIOS
+// ══════════════════════════════════════════════════════════════════
+function renderRelatorios() {
+  setContent(`
+    <div class="card" style="margin-bottom:16px"><div class="card-body">
+      <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--bg);border-radius:10px">
+        <span class="material-icons-round" style="color:var(--primary);font-size:28px">bar_chart</span>
+        <div><div style="font-size:15px;font-weight:700;color:var(--primary)">Central de Relatórios – 2026</div>
+        <div style="font-size:12px;color:var(--text2)">Dados em tempo real do Sponte · nCodigoCliente: 17698</div></div>
+      </div>
+    </div></div>
+    ${[
+      {grupo:'Financeiro',items:[
+        {icon:'warning_amber',cor:'var(--error)',title:'Inadimplência',sub:'Alunos com mensalidades vencidas',fn:()=>relInadimplencia()},
+        {icon:'bar_chart',cor:'var(--success)',title:'Receita Mensal',sub:'Resumo de recebimentos por mês',fn:()=>toast('Gerando relatório...','green')},
+        {icon:'pie_chart',cor:'var(--info)',title:'Cobranças por Tipo',sub:'Mensalidades, materiais, uniformes',fn:()=>toast('Gerando relatório...','green')},
+      ]},
+      {grupo:'Alunos',items:[
+        {icon:'school',cor:'var(--primary)',title:'Alunos por Série',sub:'Distribuição por série/turma',fn:()=>toast('Gerando relatório...','green')},
+        {icon:'fact_check',cor:'var(--warning)',title:'Frequência',sub:'Presença e faltas',fn:()=>toast('Gerando relatório...','green')},
+      ]},
+      {grupo:'Matrículas',items:[
+        {icon:'assignment_turned_in',cor:'var(--gold)',title:'Matrículas 2026',sub:'Novas matrículas e renovações',fn:()=>toast('Gerando relatório...','green')},
+        {icon:'folder_open',cor:'var(--warning)',title:'Documentação Pendente',sub:'Alunos com documentos faltando',fn:()=>toast('Gerando relatório...','green')},
+      ]},
+    ].map(g=>`
+      <div style="font-size:14px;font-weight:700;margin-bottom:10px">${g.grupo}</div>
+      <div class="card" style="margin-bottom:16px">${g.items.map(it=>`
+        <div class="list-item" onclick="(${it.fn.toString()})()">
+          <div class="avatar-circle" style="background:${it.cor}20"><span class="material-icons-round" style="color:${it.cor}">${it.icon}</span></div>
+          <div class="list-info"><div class="name">${it.title}</div><div class="sub">${it.sub}</div></div>
+          <span class="material-icons-round" style="color:var(--text2)">chevron_right</span>
+        </div>`).join('')}</div>`).join('')}
+  `);
+}
+
+async function relInadimplencia() {
+  openPanel('Inadimplência','<div class="loading-state"><div class="spinner-dark"></div><br>Consultando Sponte...</div>');
+  const res = await api('/api/financeiro?status=vencido');
+  const lista = res.ok?(Array.isArray(res.data)?res.data:(res.data?.data||[])):[];
+  const total = lista.reduce((s,t)=>s+(t.valor||t.nValor||t.nValorTitulo||0),0);
+  document.getElementById('panel-body').innerHTML = lista.length?`
+    <div style="padding:14px;background:rgba(211,47,47,.08);border-radius:10px;margin-bottom:16px">
+      <div style="font-size:13px;color:var(--text2)">Total Vencido</div>
+      <div style="font-size:24px;font-weight:800;color:var(--error)">${fmtR(total)}</div>
+      <div style="font-size:12px;color:var(--text2)">${lista.length} cobranças</div>
+    </div>
+    ${lista.map(t=>`<div class="info-row"><span class="info-label">${t.aluno||t.sAluno||'—'}</span><span class="info-value" style="color:var(--error)">${fmtR(t.valor||t.nValor||0)}</span></div>`).join('')}`:
+    `<div style="text-align:center;padding:24px;color:var(--success);font-size:15px;font-weight:600">✓ Nenhum inadimplente!</div>`;
+}
+
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){closePanel();closeForm({target:null});} });
+</script>
+</body>
+</html>
